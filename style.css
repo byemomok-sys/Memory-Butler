@@ -1,0 +1,140 @@
+/* 기본 초기화 및 폰트 */
+body {
+    font-family: 'Malgun Gothic', sans-serif;
+    background-color: #f5f7fa;
+    margin: 0;
+    padding: 15px;
+    color: #333;
+}
+
+/* 1. 빠른 입력 위젯 스타일 */
+.widget-container {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+}
+
+.widget-container h2 {
+    margin-top: 0;
+    font-size: 1.1rem;
+    color: #1a73e8;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+#locationInput {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+#locationInput:focus {
+    outline: none;
+    border-color: #1a73e8;
+}
+
+button[type="submit"] {
+    background-color: #1a73e8;
+    color: white;
+    border: none;
+    padding: 0 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.widget-tip {
+    font-size: 0.8rem;
+    color: #70757a;
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+
+/* 2. 공간별 뷰 카드 스타일 */
+.space-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.space-card h3 {
+    margin-top: 0;
+    font-size: 1rem;
+    border-bottom: 2px solid #f1f3f4;
+    padding-bottom: 8px;
+}
+
+.item-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+/* ★★★ [중요 피드백 반영] 아이콘 내 이미지 여백 없이 꽉 채우는 전용 CSS ★★★ */
+.icon-frame {
+    width: 45px;          /* 고정 폭 */
+    height: 45px;         /* 고정 높이 (정정사각형) */
+    border-radius: 8px;   /* 부드러운 라운드 처리 */
+    overflow: hidden;     /* 프레임을 벗어나는 이미지 숨김 */
+    background-color: #f1f3f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;         /* 비율을 유지하며 프레임에 꽉 채움 (여백 제거 핵심) */
+    object-position: center;   /* 이미지 중심을 기준으로 정렬 */
+}
+
+.item-name {
+    font-weight: bold;
+}
+
+.item-detail {
+    color: #70757a;
+    font-size: 0.9rem;
+}
+
+/* 백그라운드 처리 알림창 (Toast) */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #323232;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 30px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 1000;
+    font-size: 0.9rem;
+    transition: opacity 0.3s;
+}
+
+.toast.hidden {
+    display: none;
+}
+
+.edit-btn {
+    background: none;
+    border: none;
+    color: #34a853;
+    font-weight: bold;
+    cursor: pointer;
+}

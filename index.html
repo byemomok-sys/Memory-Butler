@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기억집사 - Memory Butler</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="widget-container">
+        <h2>🧠 기억집사 한줄 기록</h2>
+        <form id="recordForm" onsubmit="handleRecordSubmit(event)">
+            <div class="input-group">
+                <input type="text" id="locationInput" placeholder="예: 안방 서랍에 차 키 둠" required>
+                <button type="submit">기록</button>
+            </div>
+        </form>
+        <p class="widget-tip">입력 후 창이 바로 닫히며, AI가 분석 후 알림을 보냅니다.</p>
+    </div>
+
+    <div class="main-content">
+        <h2>📍 나의 공간별 물품 뷰</h2>
+        
+        <div class="space-container" id="spaceContainer">
+            <div class="space-card">
+                <h3>🏠 안방</h3>
+                <div class="item-list">
+                    <div class="item-row">
+                        <div class="icon-frame">
+                            <img src="https://picsum.photos/100" alt="물품 아이콘">
+                        </div>
+                        <span class="item-name">차 키</span>
+                        <span class="item-detail">(서랍장 내부)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notificationToast" class="toast hidden">
+        <span id="toastMessage"></span>
+        <button onclick="editMode()" class="edit-btn">수정하기</button>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
