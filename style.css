@@ -1,140 +1,321 @@
-/* 기본 초기화 및 폰트 */
-body {
-    font-family: 'Malgun Gothic', sans-serif;
-    background-color: #f5f7fa;
+/* --- 프리미엄 다크 모던 (네온 슬레이트 변수정의) --- */
+:root {
+    --bg-main: #0f131a;         /* 깊이감 있는 딥 다크 슬레이트 */
+    --bg-card: #171d26;         /* 카드용 미드나잇 블루 슬레이트 */
+    --bg-glass: rgba(23, 29, 38, 0.75);
+    --neon-mint: #00e676;       /* 포인트 하이라이트 민트 에메랄드 */
+    --text-primary: #f1f5f9;    /* 가독성 높은 연한 그레이 */
+    --text-muted: #94a3b8;       /* 서브 텍스트용 슬레이트 그레이 */
+    --border-color: #262f3d;    /* 섬세한 보더 라인 */
+}
+
+* {
+    box-sizing: border-box;
     margin: 0;
-    padding: 15px;
-    color: #333;
+    padding: 0;
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
 }
 
-/* 1. 빠른 입력 위젯 스타일 */
-.widget-container {
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    margin-bottom: 25px;
-}
-
-.widget-container h2 {
-    margin-top: 0;
-    font-size: 1.1rem;
-    color: #1a73e8;
-}
-
-.input-group {
+body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    padding: 16px;
     display: flex;
-    gap: 10px;
+    justify-content: center;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 500px; /* 모바일 프리프 경량화 뷰포트 */
+    margin-top: 10px;
+}
+
+/* --- 1. Siri 스타일 글래스모피즘 입력 위젯 --- */
+.app-header {
+    margin-bottom: 30px;
+    position: sticky;
+    top: 10px;
+    z-index: 100;
+}
+
+.glass-widget {
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+.widget-title-zone {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.pulse-icon {
+    width: 8px;
+    height: 8px;
+    background-color: var(--neon-mint);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--neon-mint);
+    animation: pulse 2s infinite;
+}
+
+.widget-title-zone h2 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.search-bar-wrap {
+    display: flex;
+    background-color: rgba(15, 19, 26, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: 30px;
+    padding: 6px 6px 6px 16px;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.search-bar-wrap:focus-within {
+    border-color: var(--neon-mint);
+    box-shadow: 0 0 10px rgba(0, 230, 118, 0.15);
 }
 
 #locationInput {
     flex: 1;
-    padding: 12px;
-    border: 1px solid #dadce0;
-    border-radius: 8px;
-    font-size: 1rem;
-}
-
-#locationInput:focus {
-    outline: none;
-    border-color: #1a73e8;
-}
-
-button[type="submit"] {
-    background-color: #1a73e8;
-    color: white;
+    background: none;
     border: none;
-    padding: 0 20px;
-    border-radius: 8px;
+    color: var(--text-primary);
     font-size: 1rem;
-    cursor: pointer;
+    outline: none;
 }
 
-.widget-tip {
-    font-size: 0.8rem;
-    color: #70757a;
-    margin-top: 8px;
-    margin-bottom: 0;
+#locationInput::placeholder {
+    color: #52637a;
 }
 
-/* 2. 공간별 뷰 카드 스타일 */
-.space-card {
-    background: #fff;
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-}
-
-.space-card h3 {
-    margin-top: 0;
-    font-size: 1rem;
-    border-bottom: 2px solid #f1f3f4;
-    padding-bottom: 8px;
-}
-
-.item-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 0;
-}
-
-/* ★★★ [중요 피드백 반영] 아이콘 내 이미지 여백 없이 꽉 채우는 전용 CSS ★★★ */
-.icon-frame {
-    width: 45px;          /* 고정 폭 */
-    height: 45px;         /* 고정 높이 (정정사각형) */
-    border-radius: 8px;   /* 부드러운 라운드 처리 */
-    overflow: hidden;     /* 프레임을 벗어나는 이미지 숨김 */
-    background-color: #f1f3f4;
+.submit-btn {
+    background: var(--neon-mint);
+    color: #000;
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
 }
 
-.icon-frame img {
+.submit-btn:active {
+    transform: scale(0.9);
+}
+
+.widget-status {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+    text-align: center;
+}
+
+/* --- 2. 냉동고집사식 재고/공간 뷰 리디자인 --- */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 0 4px;
+}
+
+.section-header h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.total-count {
+    font-size: 0.8rem;
+    color: var(--neon-mint);
+    background: rgba(0, 230, 118, 0.1);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.space-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.space-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.folder-icon {
+    font-size: 1.1rem;
+}
+
+.space-card-header h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    flex: 1;
+}
+
+.badge-count {
+    background: #262f3d;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.item-card {
+    display: flex;
+    align-items: center;
+    background: rgba(15, 19, 26, 0.3);
+    border: 1px solid rgba(38, 47, 61, 0.5);
+    border-radius: 12px;
+    padding: 10px 12px;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.item-card:hover {
+    transform: translateY(-2px);
+    background: rgba(38, 47, 61, 0.3);
+}
+
+/* ★★★ [요청 피드백 적극 반영] 아이콘 내 그림 완전 채움 서클 프레임 ★★★ */
+.icon-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;         /* 퍼펙트 원형 아바타 */
+    overflow: hidden;           /* 영역 이탈 컷팅 */
+    border: 1.5px solid var(--border-color); /* 감각적인 링 보더링 */
+    background-color: #10141d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;             /* 플렉스 레이아웃 박스 찌그러짐 방지 */
+}
+
+.icon-avatar img {
     width: 100%;
     height: 100%;
-    object-fit: cover;         /* 비율을 유지하며 프레임에 꽉 채움 (여백 제거 핵심) */
-    object-position: center;   /* 이미지 중심을 기준으로 정렬 */
+    object-fit: cover;          /* 여백 완전 제거 및 원본 비율 보존 */
+    object-position: center;    /* 이미지 중심 정렬 */
+}
+
+.item-info {
+    flex: 1;
+    margin-left: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .item-name {
-    font-weight: bold;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
-.item-detail {
-    color: #70757a;
-    font-size: 0.9rem;
+.item-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
 }
 
-/* 백그라운드 처리 알림창 (Toast) */
+.time-chip {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: #1f2631;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+/* --- 3. 비동기 백그라운드 토스트 알림 --- */
 .toast {
     position: fixed;
-    bottom: 20px;
+    bottom: 24px;
     left: 50%;
     transform: translateX(-50%);
-    background: #323232;
-    color: #fff;
-    padding: 12px 20px;
-    border-radius: 30px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    background: #1e2530;
+    border: 1px solid var(--neon-mint);
+    border-radius: 14px;
+    padding: 14px 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     display: flex;
     align-items: center;
-    gap: 15px;
+    justify-content: space-between;
+    width: calc(100% - 32px);
+    max-width: 450px;
     z-index: 1000;
-    font-size: 0.9rem;
-    transition: opacity 0.3s;
+    animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .toast.hidden {
     display: none;
 }
 
-.edit-btn {
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toast-loader {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0, 230, 118, 0.2);
+    border-top-color: var(--neon-mint);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+#toastMessage {
+    font-size: 0.88rem;
+    font-weight: 500;
+}
+
+.toast-edit-btn {
     background: none;
     border: none;
-    color: #34a853;
-    font-weight: bold;
+    color: var(--neon-mint);
+    font-weight: 700;
+    font-size: 0.88rem;
     cursor: pointer;
+    padding-left: 10px;
+}
+
+/* 키프레임 애니메이션 */
+@keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 230, 118, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes slideUp {
+    from { transform: translate(-50%, 20px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
 }

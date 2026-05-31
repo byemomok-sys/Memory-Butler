@@ -3,44 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>기억집사 - Memory Butler</title>
+    <title>Memory Butler - 기억집사</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="widget-container">
-        <h2>🧠 기억집사 한줄 기록</h2>
-        <form id="recordForm" onsubmit="handleRecordSubmit(event)">
-            <div class="input-group">
-                <input type="text" id="locationInput" placeholder="예: 안방 서랍에 차 키 둠" required>
-                <button type="submit">기록</button>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="glass-widget">
+                <div class="widget-title-zone">
+                    <span class="pulse-icon"></span>
+                    <h2>Memory Butler</h2>
+                </div>
+                <form id="recordForm" onsubmit="handleRecordSubmit(event)">
+                    <div class="search-bar-wrap">
+                        <input type="text" id="locationInput" placeholder="어디에 무엇을 두셨나요?" autocomplete="off" required>
+                        <button type="submit" class="submit-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                        </button>
+                    </div>
+                </form>
+                <div class="widget-status">입력 즉시 창이 닫히며, AI가 백그라운드에서 분석을 시작합니다.</div>
             </div>
-        </form>
-        <p class="widget-tip">입력 후 창이 바로 닫히며, AI가 분석 후 알림을 보냅니다.</p>
-    </div>
+        </header>
 
-    <div class="main-content">
-        <h2>📍 나의 공간별 물품 뷰</h2>
-        
-        <div class="space-container" id="spaceContainer">
-            <div class="space-card">
-                <h3>🏠 안방</h3>
-                <div class="item-list">
-                    <div class="item-row">
-                        <div class="icon-frame">
-                            <img src="https://picsum.photos/100" alt="물품 아이콘">
+        <main class="app-main">
+            <div class="section-header">
+                <h3>📍 자가 학습된 공간 마스터</h3>
+                <span class="total-count">보관 물품 3개</span>
+            </div>
+            
+            <div class="space-grid" id="spaceContainer">
+                
+                <div class="space-card">
+                    <div class="space-card-header">
+                        <span class="folder-icon">🏠</span>
+                        <h4>안방</h4>
+                        <span class="badge-count">2</span>
+                    </div>
+                    <div class="item-list">
+                        <div class="item-card">
+                            <div class="icon-avatar">
+                                <img src="https://picsum.photos/100?random=1" alt="차 키">
+                            </div>
+                            <div class="item-info">
+                                <span class="item-name">자동차 키</span>
+                                <span class="item-meta">첫 번째 서랍 안쪽</span>
+                            </div>
+                            <div class="time-chip">방금 전</div>
                         </div>
-                        <span class="item-name">차 키</span>
-                        <span class="item-detail">(서랍장 내부)</span>
+
+                        <div class="item-card">
+                            <div class="icon-avatar">
+                                <img src="https://picsum.photos/100?random=2" alt="여권">
+                            </div>
+                            <div class="item-info">
+                                <span class="item-name">해외여행 여권 케이스</span>
+                                <span class="item-meta">화장대 위 보석함</span>
+                            </div>
+                            <div class="time-chip">3일 전</div>
+                        </div>
                     </div>
                 </div>
+
+                <div class="space-card">
+                    <div class="space-card-header">
+                        <span class="folder-icon">📦</span>
+                        <h4>다용도실</h4>
+                        <span class="badge-count">1</span>
+                    </div>
+                    <div class="item-list">
+                        <div class="item-card">
+                            <div class="icon-avatar">
+                                <img src="https://picsum.photos/100?random=3" alt="공구">
+                            </div>
+                            <div class="item-info">
+                                <span class="item-name">보쉬 전동 드라이버</span>
+                                <span class="item-meta">철제 선반 3단 오른쪽</span>
+                            </div>
+                            <div class="time-chip">2주 전</div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-        </div>
+        </main>
     </div>
 
     <div id="notificationToast" class="toast hidden">
-        <span id="toastMessage"></span>
-        <button onclick="editMode()" class="edit-btn">수정하기</button>
+        <div class="toast-content">
+            <div class="toast-loader"></div>
+            <span id="toastMessage"></span>
+        </div>
+        <button onclick="editMode()" class="toast-edit-btn">수정</button>
     </div>
 
     <script src="app.js"></script>
