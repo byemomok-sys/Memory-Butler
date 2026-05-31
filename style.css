@@ -7,9 +7,12 @@
     --text-muted: #94a3b8;
     --border-color: #262f3d;
 }
+
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; -webkit-font-smoothing: antialiased; }
 body { background-color: var(--bg-main); color: var(--text-primary); padding: 16px; display: flex; justify-content: center; }
 .app-container { width: 100%; max-width: 500px; margin-top: 10px; }
+
+/* 1. Siri 스타일 입력 위젯 */
 .app-header { margin-bottom: 30px; position: sticky; top: 10px; z-index: 100; }
 .glass-widget { background: var(--bg-glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--border-color); border-radius: 20px; padding: 20px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4); }
 .widget-title-zone { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
@@ -22,6 +25,8 @@ body { background-color: var(--bg-main); color: var(--text-primary); padding: 16
 .submit-btn { background: var(--neon-mint); color: #000; border: none; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s ease; }
 .submit-btn:active { transform: scale(0.9); }
 .widget-status { font-size: 0.75rem; color: var(--text-muted); margin-top: 10px; text-align: center; }
+
+/* 2. 공간 및 물품 보드 */
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 4px; }
 .section-header h3 { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); }
 .total-count { font-size: 0.8rem; color: var(--neon-mint); background: rgba(0, 230, 118, 0.1); padding: 4px 10px; border-radius: 20px; font-weight: 600; }
@@ -34,20 +39,39 @@ body { background-color: var(--bg-main); color: var(--text-primary); padding: 16
 .item-card { display: flex; align-items: center; background: rgba(15, 19, 26, 0.3); border: 1px solid rgba(38, 47, 61, 0.5); border-radius: 12px; padding: 10px 12px; transition: transform 0.2s, background 0.2s; }
 .item-card:hover { transform: translateY(-2px); background: rgba(38, 47, 61, 0.3); }
 
-/* ★ 아이콘 꽉 채움 레이아웃 */
-.icon-avatar { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--border-color); background-color: #10141d; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.icon-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+/* ★ [피드백 반영 핵심] icon.png가 여백 공백 없이 완벽히 정원에 차도록 맞추는 CSS 구조 */
+.icon-avatar { 
+    width: 44px; 
+    height: 44px; 
+    border-radius: 50%; 
+    overflow: hidden; 
+    border: 1.5px solid var(--border-color); 
+    background-color: #10141d; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    flex-shrink: 0; 
+}
+.icon-avatar img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    object-position: center; 
+}
 
 .item-info { flex: 1; margin-left: 14px; display: flex; flex-direction: column; gap: 2px; }
 .item-name { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
-.item-meta { font-size: 0.8rem; color: var(--neon-mint); font-weight: 500; } /* 브레드크럼 시인성 강화 */
+.item-meta { font-size: 0.8rem; color: var(--neon-mint); font-weight: 500; letter-spacing: -0.01em; }
 .time-chip { font-size: 0.75rem; color: var(--text-muted); background: #1f2631; padding: 4px 8px; border-radius: 6px; }
+
+/* 3. 토스트 시스템 */
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e2530; border: 1px solid var(--neon-mint); border-radius: 14px; padding: 14px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: space-between; width: calc(100% - 32px); max-width: 450px; z-index: 1000; animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 .toast.hidden { display: none; }
 .toast-content { display: flex; align-items: center; gap: 12px; }
 .toast-loader { width: 16px; height: 16px; border: 2px solid rgba(0, 230, 118, 0.2); border-top-color: var(--neon-mint); border-radius: 50%; animation: spin 0.8s linear infinite; }
 #toastMessage { font-size: 0.88rem; font-weight: 500; }
 .toast-edit-btn { background: none; border: none; color: var(--neon-mint); font-weight: 700; font-size: 0.88rem; cursor: pointer; padding-left: 10px; }
+
 @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 230, 118, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes slideUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }

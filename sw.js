@@ -1,5 +1,5 @@
-const CACHE_NAME = 'memory-butler-v2';
-const urlsToCache = ['./index.html', './style.css', './app.js', './manifest.json'];
+const CACHE_NAME = 'memory-butler-v3';
+const urlsToCache = ['./index.html', './style.css', './app.js', './manifest.json', './icon.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)));

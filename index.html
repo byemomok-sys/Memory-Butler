@@ -2,11 +2,17 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Memory Butler - 기억집사</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="style.css">
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#0f131a">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" href="icon.png">
 </head>
 <body>
 
@@ -25,7 +31,7 @@
                         </button>
                     </div>
                 </form>
-                <div class="widget-status">입력 즉시 UI가 리셋되며 백그라운드 분석이 구동됩니다.</div>
+                <div class="widget-status">입력 즉시 입력 폼이 비워지며 백그라운드 AI 연동이 시작됩니다.</div>
             </div>
         </header>
 
@@ -48,10 +54,11 @@
     </div>
 
     <script>
+        // PWA 모바일 로컬 설치 구동용 서비스 워커 핸들러 등록
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
-                .then(() => console.log('기억집사 서비스워커 등록 완료'))
-                .catch(err => console.log('서비스워커 에러:', err));
+                .then(() => console.log('기억집사 서비스워커 정상 바인딩 완료'))
+                .catch(err => console.log('서비스워커 등록 오류:', err));
         }
     </script>
     <script src="app.js"></script>
