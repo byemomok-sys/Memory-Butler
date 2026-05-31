@@ -1,5 +1,5 @@
 // [필수 변경] 구글 앱스 스크립트 웹앱 배포 후 획득한 URL을 여기에 붙여넣으세요.
-const GAS_WEB_APP_URL = "YOUR_GAS_WEB_APP_URL_HERE";
+const GAS_WEB_APP_URL = "Yhttps://script.google.com/macros/s/AKfycbyTCcxKAPAbo5-2hbfDBlisXoTKKHyC6ODrhmqpRAbYC2JBNbBdoCFIZYFcnNnvg0m04w/exec";
 
 document.addEventListener('DOMContentLoaded', () => {
     // [하이브리드 싱크 1단계] 앱 개방 즉시 로컬 캐시 데이터 존재 시 즉시 렌더링 (로딩 대기 0초)
