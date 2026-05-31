@@ -6,17 +6,9 @@
   "start_url": "./index.html",
   "name": "기억집사 (Memory Butler)",
   "short_name": "기억집사",
-  "description": "AI 백그라운드 분석을 활용한 물품 위치 자가 학습 관리 비서",
+  "description": "3단계 브레드크럼 위치 인지형 AI 기억 비서",
   "icons": [
-    {
-      "src": "https://picsum.photos/192?random=99",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
+    { "src": "icon.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
