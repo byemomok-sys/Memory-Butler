@@ -1,141 +1,197 @@
-// 소장님의 고유 고정 구글 앱스 스크립트 웹앱 주소 매핑
-const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyA2QmO-xI5tpmLpmVa0kdWHVdo2eRqLrpLrD3IkBXdxjEZ8JW72PRXXfnehPMxfolziQ/exec";
+// =================================================================
+// [프로젝트: Memory Butler (기억집사) - 백엔드 v5.0 마스터 완결본]
+// [특징: 복수 입력 JSON 배열 파싱 및 하이브리드 공간 관리 API 탑재]
+// =================================================================
 
-document.addEventListener('DOMContentLoaded', () => {
-    // [하이브리드 싱크Step 1] 앱 개방 즉시 이전 캐시 데이터를 0초 만에 로드하여 출력
-    loadCachedData();
-    // [하이브리드 싱크Step 2] 백그라운드에서 조용히 GAS 서버의 최신본을 fetch하여 갱신
-    fetchLatestData();
-});
+const SPREADSHEET_ID = "1UCYykiW8lldY6_Wwg_T4u6jSI1YFVIS5Xhq9k3TBHlY";
+const BASE_URL = "https://generativelanguage.googleapis.com/v1"; 
 
-async function handleRecordSubmit(event) {
-    event.preventDefault();
-    const inputField = document.getElementById('locationInput');
-    const userText = inputField.value.trim();
-    if (!userText) return;
+function getApiKey() {
+  return PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY");
+}
 
-    // 대기 피로도 제로화: 폼은 즉시 비움
-    inputField.value = '';
-    showNotification("기억집사가 위치 문맥을 백그라운드 분석 중입니다...", true);
+// 📱 프론트엔드 데이터 획득용 GET 엔드포인트
+function doGet(e) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const latestData = getAllInventoryData(ss);
+    return ContentService.createTextOutput(JSON.stringify({ success: true, data: latestData }))
+                         .setMimeType(ContentService.MimeType.JSON);
+  } catch(error) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
+                         .setMimeType(ContentService.MimeType.JSON);
+  }
+}
 
+// 📥 문맥 분석 및 저장/수정 동용 POST 엔드포인트
+function doPost(e) {
+  try {
+    const params = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const logSheet = ss.getSheetByName("Log_Data");
+    const invSheet = ss.getSheetByName("Main_Inventory");
+    
+    // [기능분기 1] 마스터 공간에서 드래그앤드롭 후 전체 저장할 때
+    if (params.action === "saveInventory") {
+      const lastRow = invSheet.getLastRow();
+      if(lastRow > 1) invSheet.getRange(2, 1, lastRow - 1, 6).clearContent();
+      
+      if(params.data && params.data.length > 0) {
+        const writeData = params.data.map(obj => [
+          obj.id || ("MB_" + new Date().getTime() + Math.floor(Math.random()*1000)), 
+          new Date(), 
+          obj.item, 
+          obj.space_l1 || "미분류", 
+          obj.space_l2 || "", 
+          obj.space_l3 || ""
+        ]);
+        invSheet.getRange(2, 1, writeData.length, 6).setValues(writeData);
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: true, message: "공간 배치가 완전히 동기화되었습니다." })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // [기능분기 2] 일반 자연어 한 줄 입력 및 복수 문장 처리
+    const userText = params.text;
+    logSheet.appendRow([new Date(), userText]); // 원본 로깅
+    
+    let parsedList;
     try {
-        const response = await fetch(GAS_WEB_APP_URL, {
-            method: 'POST',
-            body: JSON.stringify({ text: userText })
-        });
-        const result = await response.json();
-        if (result.success) {
-            showNotification(`🔔 '${result.parsed.item}' 위치를 정형화하여 기록했습니다.`);
-            // 실시간 리턴 리스트 데이터 반영 및 로컬 캐시 덮어쓰기
-            updateUIAndCache(result.data);
-        } else {
-            showNotification("⚠️ AI 문맥 파싱 처리 중 장애가 발생했습니다.");
-        }
-    } catch (error) {
-        showNotification("⚠️ 구글 서버 통신 오류 (네트워크 확인 필요)");
+      parsedList = callGeminiBulkAI(userText);
+    } catch(aiError) {
+      // 통신 전면 마비 시 비상 방어선 (단일 처리 구조로 완충)
+      parsedList = [{ 
+        item: userText.substring(0, 15) + "...(분석장애)", 
+        space_l1: "미분류", 
+        space_l2: "", 
+        space_l3: "" 
+      }];
     }
+    
+    // 배열 구조를 루프 돌며 시트에 다중 적재 실행
+    const resultMessages = [];
+    parsedList.forEach(parsedData => {
+      const itemId = "MB_" + new Date().getTime() + Math.floor(Math.random()*1000);
+      const l1 = parsedData.space_l1 || "미분류";
+      const l2 = parsedData.space_l2 || "";
+      const l3 = parsedData.space_l3 || "";
+      
+      invSheet.appendRow([itemId, new Date(), parsedData.item, l1, l2, l3]);
+      updateSpaceMaster(ss, l1);
+      
+      // 알림 메시지 조합 빌드
+      let pathStr = l1;
+      if(l2) pathStr += ` ➔ ${l2}`;
+      if(l3) pathStr += ` ➔ ${l3}`;
+      resultMessages.push(`[${parsedData.item}]을(를) '${pathStr}'에 넣었습니다.`);
+    });
+    
+    const latestData = getAllInventoryData(ss);
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      response: resultMessages.join("\n"),
+      data: latestData
+    })).setMimeType(ContentService.MimeType.JSON);
+    
+  } catch(error) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
+                         .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
-function loadCachedData() {
-    const cached = localStorage.getItem('memory_butler_cache');
-    if (cached) renderSpaceContainer(JSON.parse(cached));
-}
+// 🧠 [소장님 안 채택] 복수 물품 분석용 고도화 JSON 배열 파싱 엔진
+function callGeminiBulkAI(text) {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("API Key 로드 실패");
 
-async function fetchLatestData() {
+  const prompt = `주어진 한국어 문장을 분석하여 보관하려는 물품들과 그 공간들을 정확히 추출해라. 
+한 문장에 여러 물품이나 장소가 언급된 경우, 반드시 각각 분리하여 JSON 배열 구조로 응답해야 한다.
+정보가 유추되지 않는 중간/소공간은 빈 문자열("")로 처리해라.
+
+응답은 다른 안내 텍스트 없이 반드시 아래 예시 규격의 순수 JSON 배열만 출력해라:
+[
+  {
+    "item": "칼",
+    "space_l1": "주방",
+    "space_l2": "선반",
+    "space_l3": ""
+  },
+  {
+    "item": "키",
+    "space_l1": "안방",
+    "space_l2": "책상",
+    "space_l3": "첫번째 서랍"
+  }
+]
+
+문장: "${text}"`;
+
+  const modelsToTry = ["models/gemini-3.5-flash", "models/gemini-2.5-flash", "models/gemini-3.1-pro"];
+  let response, responseCode, fetchSuccess = false;
+  
+  for (let m = 0; m < modelsToTry.length; m++) {
     try {
-        const response = await fetch(GAS_WEB_APP_URL);
-        const result = await response.json();
-        if (result.success && result.data) updateUIAndCache(result.data);
-    } catch (error) {
-        console.warn("백그라운드 실시간 동기화 오프라인 홀딩");
+      const url = `${BASE_URL}/${modelsToTry[m]}:generateContent?key=${apiKey}`;
+      response = UrlFetchApp.fetch(url, {
+        "method": "post",
+        "contentType": "application/json",
+        "muteHttpExceptions": true,
+        "payload": JSON.stringify({ "contents": [{ "parts": [{ "text": prompt }] }], "generationConfig": { "temperature": 0.1 } })
+      });
+      responseCode = response.getResponseCode();
+      if (responseCode === 200) { fetchSuccess = true; break; }
+    } catch (e) {
+      Utilities.sleep(1000);
     }
+  }
+  
+  if (!fetchSuccess) throw new Error("엔진 통신 마비");
+  
+  const match = response.getContentText().match(/\[[\s\S]*\]/);
+  if (!match) throw new Error("JSON 배열 파싱 실패");
+  return JSON.parse(match[0]);
 }
 
-function updateUIAndCache(data) {
-    localStorage.setItem('memory_butler_cache', JSON.stringify(data));
-    renderSpaceContainer(data);
+function updateSpaceMaster(ss, spaceName) {
+  if (!spaceName || spaceName === "미분류") return;
+  const spaceSheet = ss.getSheetByName("Space_Master");
+  const data = spaceSheet.getDataRange().getValues();
+  let isExists = false;
+  for(let i = 1; i < data.length; i++) {
+    if(data[i][0] === spaceName) { isExists = true; break; }
+  }
+  if(!isExists) spaceSheet.appendRow([spaceName, new Date()]);
 }
 
-// ★ [옵션 1: 랭킹형 브레드크럼 계층 인터페이스 구현]
-function renderSpaceContainer(data) {
-    const container = document.getElementById('spaceContainer');
-    container.innerHTML = '';
-
-    if (!data || data.length === 0) {
-        container.innerHTML = `<div class="widget-status" style="padding:40px 0;">보관된 물품 자산이 없습니다.</div>`;
-        document.querySelector('.total-count').innerText = "보관 물품 0개";
-        return;
-    }
-
-    document.querySelector('.total-count').innerText = `보관 물품 ${data.length}개`;
-
-    // 대공간(space_l1)을 대분류 헤더 키값으로 잡고 맵핑 처리
-    const grouped = {};
-    data.forEach(item => {
-        const primarySpace = item.space_l1 || "미분류 대공간";
-        if (!grouped[primarySpace]) grouped[primarySpace] = [];
-        grouped[primarySpace].push(item);
+function getAllInventoryData(ss) {
+  const invSheet = ss.getSheetByName("Main_Inventory");
+  const data = invSheet.getDataRange().getValues();
+  const items = [];
+  if (data.length <= 1) return items;
+  
+  for(let i = 1; i < data.length; i++) {
+    if (!data[i][2] || data[i][2].toString().trim() === "") continue; // 유령행 완벽 소거
+    items.push({
+      id: data[i][0],
+      date: data[i][1],
+      item: data[i][2],
+      space_l1: data[i][3] || "미분류",
+      space_l2: data[i][4] || "",
+      space_l3: data[i][5] || "",
+      timeChip: calculateTimeRelative(data[i][1])
     });
-
-    Object.keys(grouped).forEach(spaceL1 => {
-        const items = grouped[spaceL1];
-        let folderIcon = "📦";
-        if (spaceL1.includes("안방") || spaceL1.includes("방")) folderIcon = "🏠";
-        if (spaceL1.includes("주방") || spaceL1.includes("부엌") || spaceL1.includes("식당")) folderIcon = "🍳";
-        if (spaceL1.includes("거실")) folderIcon = "🛋️";
-        if (spaceL1.includes("창고") || spaceL1.includes("베란다") || spaceL1.includes("다용도")) folderIcon = "📦";
-
-        const spaceCard = document.createElement('div');
-        spaceCard.className = 'space-card';
-
-        let itemCardsHTML = '';
-        items.forEach(item => {
-            // 중공간과 소공간의 깊이를 가로형 경로 문자열(Breadcrumb)로 정제 추출
-            let breadcrumbPath = "";
-            if (item.space_l2) breadcrumbPath += item.space_l2;
-            if (item.space_l3) breadcrumbPath += (breadcrumbPath ? " ➔ " : "") + item.space_l3;
-            if (!breadcrumbPath) breadcrumbPath = "상세 위치 없음";
-
-            itemCardsHTML += `
-                <div class="item-card">
-                    <div class="icon-avatar">
-                        <img src="icon.png" alt="아이콘">
-                    </div>
-                    <div class="item-info">
-                        <span class="item-name">${item.item}</span>
-                        <span class="item-meta">${breadcrumbPath}</span>
-                    </div>
-                    <div class="time-chip">${item.timeChip}</div>
-                </div>
-            `;
-        });
-
-        spaceCard.innerHTML = `
-            <div class="space-card-header">
-                <span class="folder-icon">${folderIcon}</span>
-                <h4>${spaceL1}</h4>
-                <span class="badge-count">${items.length}</span>
-            </div>
-            <div class="item-list">${itemCardsHTML}</div>
-        `;
-        container.appendChild(spaceCard);
-    });
+  }
+  return items;
 }
 
-function showNotification(message, isLoading = false) {
-    const toast = document.getElementById('notificationToast');
-    const toastMsg = document.getElementById('toastMessage');
-    const loader = document.querySelector('.toast-loader');
-    toastMsg.innerText = message;
-    loader.style.display = isLoading ? 'block' : 'none';
-    toast.classList.remove('hidden');
-    if (!isLoading) {
-        if (window.toastTimeout) clearTimeout(window.toastTimeout);
-        window.toastTimeout = setTimeout(() => toast.classList.add('hidden'), 6000);
-    }
-}
-
-function editMode() {
-    alert("상세 수정 기능 및 시트 직접 제어 모듈 대기 중");
-    document.getElementById('notificationToast').classList.add('hidden');
+function calculateTimeRelative(dateString) {
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffMs = now - past;
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffMins < 1) return "방금 전";
+  if (diffMins < 60) return diffMins + "분 전";
+  if (diffHours < 24) return diffHours + "시간 전";
+  return diffDays + "일 전";
 }

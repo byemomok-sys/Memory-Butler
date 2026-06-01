@@ -1,77 +1,289 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Memory Butler - 기억집사</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <link rel="stylesheet" href="style.css">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="#0f131a">
-    <link rel="apple-touch-icon" href="icon.png">
-    <link rel="icon" href="icon.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <link rel="icon" href="icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>기억집사 Memory Butler</title>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+  <style>
+    * { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; box-sizing: border-box; }
+    textarea { -webkit-user-select: auto; user-select: auto; }
+    
+    body { font-family: 'Noto Sans KR', sans-serif; background: #0f131a; color: #e2e8f0; margin: 0; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+    
+    /* 헤더 스타일 고도화 */
+    .header { padding: 16px; text-align: center; background: #1a202c; border-bottom: 1px solid #2d3748; position: relative; }
+    .header-title { font-weight: 800; font-size: 1.2rem; color: #fff; letter-spacing: -0.5px; }
+    .version-tag { position: absolute; top: 14px; right: 16px; font-size: 0.75rem; color: #00e676; font-weight: 900; background: #2d3748; padding: 3px 8px; border-radius: 20px; border: 1px solid rgba(0,230,118,0.2); }
+    .status-lbl { font-size: 0.75rem; color: #a0aec0; margin-top: 4px; font-weight: 500; }
+    
+    /* 메인 컨텐츠 영역 및 탭 스위칭 */
+    .page-content { flex: 1; overflow-y: auto; display: none; padding: 16px; }
+    .page-content.active { display: flex; flex-direction: column; }
+    
+    /* 1페이지: 기억 타임라인 레이아웃 */
+    #timelineContainer { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; padding-right: 2px; }
+    .log-card { background: #1a202c; border-left: 4px solid #00e676; padding: 14px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); animation: slideUp 0.3s ease; }
+    .log-text { font-size: 0.95rem; color: #edf2f7; font-weight: 600; line-height: 1.4; white-space: pre-wrap; }
+    .log-time { font-size: 0.75rem; color: #718096; margin-top: 6px; text-align: right; }
+    
+    /* 여러 줄 입력 컨트롤 타워 */
+    .input-box { background: #1a202c; padding: 12px; border-radius: 16px; border: 1px solid #2d3748; display: flex; flex-direction: column; gap: 8px; }
+    #textInput { width: 100%; height: 75px; background: transparent; border: none; color: #fff; font-size: 0.95rem; resize: none; outline: none; font-family: inherit; line-height: 1.4; }
+    .input-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #2d3748; padding-top: 8px; }
+    
+    /* 버튼 컴포넌트 크기 및 색감 커스텀 */
+    #micBtn { width: 42px; height: 42px; border-radius: 50%; border: none; background: #2d3748; color: #fff; font-size: 1.2rem; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s; }
+    #micBtn.listening { background: #e53e3e; color: white; animation: pulse 1.4s infinite; }
+    #sendBtn { background: #00e676; color: #0f131a; padding: 10px 20px; border-radius: 20px; border: none; font-weight: 800; font-size: 0.9rem; cursor: pointer; }
+    #sendBtn:active { opacity: 0.8; }
+    
+    /* 2페이지: 냉동고형 하이브리드 가변 칸반 구조 */
+    .kanban-board { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .kanban-row { background: #1a202c; border-radius: 12px; border: 1px solid #2d3748; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .row-header { background: #2d3748; padding: 10px 14px; font-weight: 800; color: #00e676; font-size: 0.85rem; border-bottom: 1px solid #1a202c; letter-spacing: 0.5px; }
+    .row-cards { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; min-height: 55px; background: #141a24; }
+    
+    /* 물품 네온 미니멀 카드 */
+    .kanban-card { background: #1a202c; border: 1px solid #4a5568; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex: 0 0 calc(50% - 3px); max-width: calc(50% - 3px); }
+    .card-name { font-weight: 700; font-size: 0.85rem; color: #edf2f7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .card-ctrls { display: flex; align-items: center; gap: 8px; }
+    .drag-handle { color: #4a5568; font-size: 1.2rem; cursor: grab; padding: 0 4px; }
+    .del-btn { color: #e53e3e; background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 0; }
+    
+    /* 상단 저장 바 */
+    .save-bar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+    .grid-save-btn { background: #00e676; color: #0f131a; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; }
+    
+    /* 하단 고정 내비게이션 탭 바 */
+    .nav-bar { height: calc(56px + env(safe-area-inset-bottom)); background: #1a202c; border-top: 1px solid #2d3748; display: flex; padding-bottom: env(safe-area-inset-bottom); z-index: 1000; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #718096; font-size: 0.75rem; font-weight: 700; cursor: pointer; gap: 4px; }
+    .nav-item.active { color: #00e676; }
+    .nav-icon { font-size: 1.2rem; }
+    
+    @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
+    .sortable-ghost { opacity: 0.2; border: 2px dashed #00e676; background: transparent !important; }
+  </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <header class="app-header">
-            <div class="glass-widget">
-                <div class="widget-title-zone">
-                    <span class="pulse-icon"></span>
-                    <h2>Memory Butler</h2>
-                </div>
-                <form id="recordForm" onsubmit="handleRecordSubmit(event)">
-                    <div class="textarea-bar-wrap">
-                        <textarea id="locationInput" rows="2" placeholder="어디에 무엇을 두셨나요?&#10;여러 줄로 길게 적으셔도 좋습니다." required></textarea>
-                        <div class="btn-action-group">
-                            <button type="button" class="mic-btn" onclick="showNotification('🎤 음성 인식 모듈 활성화 대기 중')">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
-                            </button>
-                            <button type="submit" class="submit-btn">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-                <div class="widget-status">전송 버튼을 누르면 AI가 입력을 분석하여 공간에 배치한 후, 결과를 <strong>[하단 알림으로]</strong> 알려드리니 안심하고 창을 닫으셔도 됩니다.</div>
-            </div>
-        </header>
+  <div class="header">
+    <div class="header-title">기억집사 Memory Butler</div>
+    <div class="version-tag">v5.0</div>
+    <div class="status-lbl" id="statusLabel">시스템 정상 대기 중</div>
+  </div>
 
-        <main class="app-main">
-            <div class="section-header">
-                <h3>기억된 마스터 공간</h3>
-                <span class="total-count">보관 물품 0개</span>
-            </div>
-            <div class="space-grid" id="spaceContainer"></div>
-        </main>
+  <div id="pageTimeline" class="page-content active">
+    <div id="timelineContainer"></div>
+    <div class="input-box">
+      <textarea id="textInput" placeholder="어디에 무엇을 두셨나요? 여러 줄로 섞어 적으셔도 집사가 분리하여 기억합니다..."></textarea>
+      <div class="input-actions">
+        <button id="micBtn" onclick="handleMicClick()">🎤</button>
+        <button id="sendBtn" onclick="handleTextSubmit()">기억하기</button>
+      </div>
     </div>
+  </div>
 
-    <div id="notificationToast" class="toast hidden">
-        <div class="toast-content">
-            <div class="toast-loader"></div>
-            <span id="toastMessage"></span>
-        </div>
-        <button onclick="editMode()" class="toast-edit-btn">수정</button>
+  <div id="pageSpace" class="page-content">
+    <div class="save-bar">
+      <button class="grid-save-btn" id="saveGridBtn" onclick="saveInventoryStructure()">🧱 구조 저장</button>
     </div>
+    <div class="kanban-board" id="spaceGrid"></div>
+  </div>
 
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => {
-                    // 새 코드가 있으면 즉시 폰의 구형 캐시를 덮어쓰도록 강제 명령 주입
-                    reg.onupdatefound = () => {
-                        const installingWorker = reg.installing;
-                        installingWorker.onstatechange = () => {
-                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                window.location.reload();
-                            }
-                        };
-                    };
-                });
+  <div class="nav-bar">
+    <div class="nav-item active" id="navTab1" onclick="switchPage(1)">
+      <div class="nav-icon">📝</div>
+      <div>기억하기</div>
+    </div>
+    <div class="nav-item" id="navTab2" onclick="switchPage(2)">
+      <div class="nav-icon">📦</div>
+      <div>마스터 공간</div>
+    </div>
+  </div>
+
+<script>
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwP5lCFozQRiP7LAHwtkeT104NLzUfPSBwN_v1ZEoOc8hQ2W5lVi97FJ9xVEN79WEoY/exec";
+  
+  let recognition = null;
+  let isListening = false;
+  let masterInventoryCache = [];
+  let saveTranscript = "";
+
+  // 🗣️ 스마트폰 최적화 음성 인식 엔진 초기화
+  try {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRec) {
+      recognition = new SpeechRec();
+      recognition.lang = 'ko-KR';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      
+      recognition.onstart = () => { isListening = true; document.getElementById('micBtn').classList.add('listening'); document.getElementById('statusLabel').innerText = "🎤 주인님의 말씀을 듣고 있습니다..."; };
+      recognition.onresult = (e) => {
+        let currentResult = "";
+        for (let i = e.resultIndex; i < e.results.length; i++) { currentResult += e.results[i][0].transcript; }
+        document.getElementById('textInput').value = saveTranscript + currentResult;
+      };
+      recognition.onend = () => {
+        if (isListening && /Android/i.test(navigator.userAgent)) {
+          saveTranscript = document.getElementById('textInput').value + " ";
+          try { recognition.start(); } catch (err) { setTimeout(() => { if (isListening) recognition.start(); }, 200); }
         }
-    </script>
-    <script src="app.js"></script>
+      };
+    }
+  } catch(e) { console.error("STT 모듈 차단됨", e); }
+
+  function handleMicClick() {
+    if (!recognition) { alert("크롬 브라우저 혹은 모바일 홈화면 앱 환경에서 마이크가 작동합니다."); return; }
+    if (isListening) {
+      isListening = false; recognition.stop();
+      document.getElementById('micBtn').classList.remove('listening');
+      document.getElementById('statusLabel').innerText = "음성 입력 마감 및 교정 대기";
+    } else {
+      saveTranscript = document.getElementById('textInput').value;
+      if(saveTranscript.length > 0 && !saveTranscript.endsWith(' ')) saveTranscript += ' ';
+      try { recognition.start(); } catch(e) { setTimeout(() => recognition.start(), 200); }
+    }
+  }
+
+  // 📲 비동기 페이지 전격 스위칭 제어
+  function switchPage(pageNum) {
+    document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
+    
+    if (pageNum === 1) {
+      document.getElementById('pageTimeline').classList.add('active');
+      document.getElementById('navTab1').classList.add('active');
+    } else {
+      document.getElementById('pageSpace').classList.add('active');
+      document.getElementById('navTab2').classList.add('active');
+      loadInventoryFromServer(); // 페이지 이동 시 최신화 갱신
+    }
+  }
+
+  // 📝 분석 완료 메시지 기반 타임라인 스택 적재 (소장님 안A)
+  function handleTextSubmit() {
+    if (isListening && recognition) { isListening = false; recognition.stop(); document.getElementById('micBtn').classList.remove('listening'); }
+    const t = document.getElementById('textInput').value; if(!t.trim()) return;
+    
+    document.getElementById('textInput').value = "";
+    document.getElementById('statusLabel').innerText = "⌛ 백엔드 파싱 연산 진행 중...";
+    
+    fetch(GAS_WEB_APP_URL, { method: "POST", body: JSON.stringify({ text: t }) })
+    .then(r => r.json()).then(d => {
+      if(d.success) {
+        document.getElementById('statusLabel').innerText = "✅ 적재 완료";
+        masterInventoryCache = d.data;
+        
+        // 타임라인 카드 뷰어 동적 인젝션
+        const container = document.getElementById('timelineContainer');
+        const card = document.createElement('div');
+        card.className = 'log-card';
+        card.innerHTML = `<div class="log-text">${d.response}</div><div class="log-time">방금 전</div>`;
+        container.insertBefore(card, container.firstChild);
+      }
+    }).catch(e => { document.getElementById('statusLabel').innerText = "❌ 통신 정체 발생"; });
+  }
+
+  // 📦 데이터베이스 일괄 조회 수신
+  function loadInventoryFromServer() {
+    const board = document.getElementById('spaceGrid');
+    board.innerHTML = "<div style='color:#718096; text-align:center; padding:30px; font-weight:bold;'>인프라 미러링 로드 중...</div>";
+    
+    fetch(GAS_WEB_APP_URL)
+    .then(r => r.json()).then(res => {
+      if(res.success) {
+        masterInventoryCache = res.data;
+        renderHybridRows();
+      }
+    }).catch(() => { board.innerHTML = "<div style='color:#e53e3e; text-align:center;'>로드 실패</div>"; });
+  }
+
+  // 🛠️ 하이브리드 계층형 가변 로우 구조 렌더링 콤포넌트 (소장님 1안 명품화)
+  function renderHybridRows() {
+    const board = document.getElementById('spaceGrid'); board.innerHTML = "";
+    let grouped = {};
+    
+    masterInventoryCache.forEach(item => {
+      // 대-중-소 결합 헤더 텍스트 조합 규칙 수립
+      let path = item.space_l1;
+      if(item.space_l2) path += ` ➔ ${item.space_l2}`;
+      if(item.space_l3) path += ` ➔ ${item.space_l3}`;
+      
+      if(!grouped[path]) grouped[path] = [];
+      grouped[path].push(item);
+    });
+    
+    Object.keys(grouped).forEach(pathStr => {
+      const row = document.createElement('div'); row.className = 'kanban-row';
+      row.setAttribute('data-path', pathStr);
+      row.innerHTML = `<div class="row-header">${pathStr}</div><div class="row-cards"></div>`;
+      board.appendChild(row);
+      
+      const cardsCont = row.querySelector('.row-cards');
+      grouped[pathStr].forEach(item => {
+        const card = document.createElement('div'); card.className = 'kanban-card';
+        card.setAttribute('data-id', item.id);
+        card.setAttribute('data-name', item.item);
+        card.innerHTML = `<div class="card-name">${item.item}</div><div class="card-ctrls"><div class="drag-handle">≡</div><button class="del-btn" onclick="removeCardItem(this)">✕</button></div>`;
+        cardsCont.appendChild(card);
+      });
+      
+      // 상호 호환 드래그앤드롭 스위치 셋업
+      new Sortable(cardsCont, {
+        group: 'butler_space',
+        animation: 180,
+        handle: '.drag-handle',
+        ghostClass: 'sortable-ghost',
+        delay: 60,
+        delayOnTouchOnly: true
+      });
+    });
+    document.getElementById('statusLabel').innerText = "마스터 공간 미러링 동기화 완료";
+  }
+
+  function removeCardItem(btn) {
+    if(confirm("이 품목의 위치 기억을 지우시겠습니까?")) { btn.closest('.kanban-card').remove(); }
+  }
+
+  // 🧱 드래그 완료 후 구조적 저장 송출 엔진
+  function saveInventoryStructure() {
+    let finalPayload = [];
+    document.querySelectorAll('.kanban-row').forEach(row => {
+      const pathChunks = row.getAttribute('data-path').split(' ➔ ');
+      const l1 = pathChunks[0] || "미분류";
+      const l2 = pathChunks[1] || "";
+      const l3 = pathChunks[2] || "";
+      
+      row.querySelectorAll('.kanban-card').forEach(card => {
+        finalPayload.push({
+          id: card.getAttribute('data-id'),
+          item: card.getAttribute('data-name'),
+          space_l1: l1,
+          space_l2: l2,
+          space_l3: l3
+        });
+      });
+    });
+    
+    const saveBtn = document.getElementById('saveGridBtn');
+    saveBtn.innerText = "🧱 공장 싱크 중..."; saveBtn.disabled = true;
+    
+    fetch(GAS_WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "saveInventory", data: finalPayload }) })
+    .then(r => r.json()).then(res => {
+      saveBtn.innerText = "🧱 구조 저장"; saveBtn.disabled = false;
+      document.getElementById('statusLabel').innerText = "✅ 서버 저장 성공";
+      loadInventoryFromServer();
+    }).catch(() => { saveBtn.innerText = "🧱 구조 저장"; saveBtn.disabled = false; alert("동기화 통신 실패"); });
+  }
+
+  // 초기 1페이지 데이터 사전 조율 로드
+  fetch(GAS_WEB_APP_URL).then(r => r.json()).then(res => { if(res.success) masterInventoryCache = res.data; });
+</script>
 </body>
 </html>
