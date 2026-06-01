@@ -24,14 +24,13 @@
     
     #timelineContainer { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; padding-right: 2px; }
     .log-card { background: #1a202c; border-left: 4px solid #00e676; padding: 14px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); animation: slideUp 0.3s ease; }
-    .log-text { font-size: 0.95rem; color: #edf2f7; font-weight: 600; line-height: 1.4; white-space: pre-wrap; }
+    .log-text { font-size: 0.95rem; color: #edf2f7; font-weight: 600; line-height: 1.4; white-space: pre-wrap; word-break: keep-all; }
     .log-time { font-size: 0.75rem; color: #718096; margin-top: 6px; text-align: right; }
     
     .input-box { background: #1a202c; padding: 12px; border-radius: 16px; border: 1px solid #2d3748; display: flex; flex-direction: column; gap: 8px; }
     #textInput { width: 100%; height: 75px; background: transparent; border: none; color: #fff; font-size: 0.95rem; resize: none; outline: none; font-family: inherit; line-height: 1.4; }
     .input-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #2d3748; padding-top: 8px; }
     
-    /* 소장님 지정 안심 가이드 텍스트 안내 레이어 */
     .notice-text { font-size: 0.75rem; color: #a0aec0; line-height: 1.4; margin-bottom: 6px; word-break: keep-all; padding: 0 4px; }
     
     #micBtn { width: 42px; height: 42px; border-radius: 50%; border: none; background: #2d3748; color: #fff; font-size: 1.2rem; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s; }
@@ -67,7 +66,7 @@
 
   <div class="header">
     <div class="header-title">기억집사 Memory Butler</div>
-    <div class="version-tag">v5.1</div>
+    <div class="version-tag">v5.2</div>
     <div class="status-lbl" id="statusLabel">시스템 정상 대기 중</div>
   </div>
 
@@ -109,7 +108,6 @@
   let masterInventoryCache = [];
   let saveTranscript = "";
 
-  // 스마트 음성 인식 모듈 가동
   try {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRec) {
@@ -131,10 +129,10 @@
         }
       };
     }
-  } catch(e) { console.error("STT 권한 유실", e); }
+  } catch(e) { console.error("STT 권한 부재", e); }
 
   function handleMicClick() {
-    if (!recognition) { alert("삼성 인터넷, 크롬 또는 홈화면 바로가기 앱 환경에서 마이크가 구동됩니다."); return; }
+    if (!recognition) { alert("마이크가 지원되지 않는 브라우저 환경입니다."); return; }
     if (isListening) {
       isListening = false; recognition.stop();
       document.getElementById('micBtn').classList.remove('listening');
@@ -160,6 +158,7 @@
     }
   }
 
+  // ★ 에러 처리(Else단 방어 코드) 주입으로 무한로딩 유실 차단 마감
   function handleTextSubmit() {
     if (isListening && recognition) { isListening = false; recognition.stop(); document.getElementById('micBtn').classList.remove('listening'); }
     const t = document.getElementById('textInput').value; if(!t.trim()) return;
@@ -178,6 +177,9 @@
         card.className = 'log-card';
         card.innerHTML = `<div class="log-text">${d.response}</div><div class="log-time">방금 전</div>`;
         container.insertBefore(card, container.firstChild);
+      } else {
+        // ★ 비상 락 해제 메커니즘 가동 (UI 결함 방어)
+        document.getElementById('statusLabel').innerText = "❌ 연산 거절: " + (d.error || "구조식 오인");
       }
     }).catch(e => { document.getElementById('statusLabel').innerText = "❌ 통신 파이프 차단 발생"; });
   }
@@ -191,6 +193,8 @@
       if(res.success) {
         masterInventoryCache = res.data;
         renderHybridRows();
+      } else {
+        board.innerHTML = `<div style='color:#e53e3e; text-align:center; padding:20px;'>⚠️ 로드 거부됨: ${res.error || "인증 미결"}</div>`;
       }
     }).catch(() => { board.innerHTML = "<div style='color:#e53e3e; text-align:center;'>로드 실패</div>"; });
   }
