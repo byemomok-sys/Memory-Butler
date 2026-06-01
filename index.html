@@ -7,7 +7,6 @@
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link rel="stylesheet" href="style.css">
-    
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="#0f131a">
@@ -24,24 +23,28 @@
                     <h2>Memory Butler</h2>
                 </div>
                 <form id="recordForm" onsubmit="handleRecordSubmit(event)">
-                    <div class="search-bar-wrap">
-                        <input type="text" id="locationInput" placeholder="어디에 무엇을 두셨나요?" autocomplete="off" required>
-                        <button type="submit" class="submit-btn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-                        </button>
+                    <div class="textarea-bar-wrap">
+                        <textarea id="locationInput" rows="2" placeholder="어디에 무엇을 두셨나요?&#10;여러 줄로 길게 적으셔도 좋습니다." required></textarea>
+                        <div class="btn-action-group">
+                            <button type="button" class="mic-btn" onclick="showNotification('🎤 음성 인식 모듈 활성화 대기 중')">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+                            </button>
+                            <button type="submit" class="submit-btn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                            </button>
+                        </div>
                     </div>
                 </form>
-                <div class="widget-status">입력 즉시 입력 폼이 비워지며 백그라운드 AI 연동이 시작됩니다.</div>
+                <div class="widget-status">전송 버튼을 누르면 AI가 입력을 분석하여 공간에 배치한 후, 결과를 <strong>[하단 알림으로]</strong> 알려드리니 안심하고 창을 닫으셔도 됩니다.</div>
             </div>
         </header>
 
         <main class="app-main">
             <div class="section-header">
-                <h3>📍 자가 학습 공간 리스트</h3>
+                <h3>기억된 마스터 공간</h3>
                 <span class="total-count">보관 물품 0개</span>
             </div>
-            <div class="space-grid" id="spaceContainer">
-                </div>
+            <div class="space-grid" id="spaceContainer"></div>
         </main>
     </div>
 
@@ -54,11 +57,19 @@
     </div>
 
     <script>
-        // PWA 모바일 로컬 설치 구동용 서비스 워커 핸들러 등록
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
-                .then(() => console.log('기억집사 서비스워커 정상 바인딩 완료'))
-                .catch(err => console.log('서비스워커 등록 오류:', err));
+                .then(reg => {
+                    // 새 코드가 있으면 즉시 폰의 구형 캐시를 덮어쓰도록 강제 명령 주입
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                window.location.reload();
+                            }
+                        };
+                    };
+                });
         }
     </script>
     <script src="app.js"></script>

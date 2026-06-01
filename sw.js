@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memory-butler-v3';
+const CACHE_NAME = 'memory-butler-v4'; // 무조건 구형 캐시를 밀어내기 위해 상향 조정
 const urlsToCache = ['./index.html', './style.css', './app.js', './manifest.json', './icon.png'];
 
 self.addEventListener('install', (event) => {
