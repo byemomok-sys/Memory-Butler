@@ -1,5 +1,5 @@
 // 소장님의 고유 고정 구글 앱스 스크립트 웹앱 주소 매핑
-const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyTCcxKAPAbo5-2hbfDBlisXoTKKHyC6ODrhmqpRAbYC2JBNbBdoCFIZYFcnNnvg0m04w/exec";
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyA2QmO-xI5tpmLpmVa0kdWHVdo2eRqLrpLrD3IkBXdxjEZ8JW72PRXXfnehPMxfolziQ/exec";
 
 document.addEventListener('DOMContentLoaded', () => {
     // [하이브리드 싱크Step 1] 앱 개방 즉시 이전 캐시 데이터를 0초 만에 로드하여 출력
