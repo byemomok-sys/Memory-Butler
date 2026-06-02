@@ -1,5 +1,5 @@
-const CACHE_NAME = 'memory-butler-v4'; // 무조건 구형 캐시를 밀어내기 위해 상향 조정
-const urlsToCache = ['./index.html', './style.css', './app.js', './manifest.json', './icon.png'];
+const CACHE_NAME = 'memory-butler-v5.2'; // 버전 상향으로 스마트폰 캐시 강제 폭파
+const urlsToCache = ['./index.html', './manifest.json', './icon.png']; // 존재하지 않는 css, js 제거
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)));
