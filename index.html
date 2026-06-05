@@ -38,22 +38,39 @@
     #sendBtn { background: #00e676; color: #0f131a; padding: 10px 20px; border-radius: 20px; border: none; font-weight: 800; font-size: 0.9rem; cursor: pointer; }
     #sendBtn:active { opacity: 0.8; }
     
-    .kanban-board { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-    .kanban-row { background: #1a202c; border-radius: 12px; border: 1px solid #2d3748; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .row-header { background: #2d3748; padding: 10px 14px; font-weight: 800; color: #00e676; font-size: 0.85rem; border-bottom: 1px solid #1a202c; letter-spacing: 0.5px; }
-    .row-cards { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; min-height: 55px; background: #141a24; }
+    .kanban-board { flex: 1; display: flex; flex-direction: column; gap: 14px; padding-bottom: 20px; }
     
-    .kanban-card { background: #1a202c; border: 1px solid #4a5568; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex: 0 0 calc(50% - 3px); max-width: calc(50% - 3px); }
+    /* 🧩 3차원 중첩 박스 (마트료시카) 스타일 정의 */
+    .space-box { border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .box-title { padding: 8px 10px; font-weight: 800; letter-spacing: 0.5px; }
+    
+    /* Level 1 (최상위 대공간: 안방, 서재 등) */
+    .l1-box { background: #1a202c; border: 1px solid #2d3748; box-shadow: 0 4px 8px rgba(0,0,0,0.2); padding: 6px 10px 12px 10px; gap: 8px; }
+    .l1-title { color: #00e676; font-size: 1rem; border-bottom: 1px solid rgba(0,230,118,0.2); margin-bottom: 2px; }
+    
+    /* Level 2 (중공간: 오른쪽 선반 등) */
+    .l2-box { background: rgba(255,255,255,0.03); border: 1px dashed #4a5568; margin-top: 4px; padding: 4px 8px 10px 8px; gap: 6px; border-radius: 8px; }
+    .l2-title { color: #63b3ed; font-size: 0.85rem; padding-bottom: 4px; }
+    
+    /* Level 3 (소공간: 첫번째 서랍 등) */
+    .l3-box { background: rgba(255,255,255,0.05); border: 1px dotted #718096; margin-top: 4px; padding: 4px 6px 8px 6px; gap: 4px; border-radius: 6px; }
+    .l3-title { color: #ecc94b; font-size: 0.75rem; padding-bottom: 4px; }
+    
+    /* 드래그 앤 드롭이 가능한 아이템 적재 공간 */
+    .item-container { display: flex; flex-wrap: wrap; gap: 6px; min-height: 45px; background: rgba(0,0,0,0.15); border-radius: 8px; padding: 6px; }
+    .item-container:empty { border: 1px dashed rgba(255,255,255,0.1); } /* 비어있을 때 공간 유지 */
+    
+    .kanban-card { background: #2d3748; border: 1px solid #4a5568; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex: 0 0 calc(50% - 3px); max-width: calc(50% - 3px); height: fit-content; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .card-name { font-weight: 700; font-size: 0.85rem; color: #edf2f7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
     .card-ctrls { display: flex; align-items: center; gap: 8px; }
-    .drag-handle { color: #4a5568; font-size: 1.2rem; cursor: grab; padding: 0 4px; }
-    .del-btn { color: #e53e3e; background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 0; }
+    .drag-handle { color: #a0aec0; font-size: 1.2rem; cursor: grab; padding: 0 4px; }
+    .del-btn { color: #fc8181; background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 0; }
     
     .save-bar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
     .grid-save-btn { background: #00e676; color: #0f131a; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; }
     
     .nav-bar { height: calc(56px + env(safe-area-inset-bottom)); background: #1a202c; border-top: 1px solid #2d3748; display: flex; padding-bottom: env(safe-area-inset-bottom); z-index: 1000; }
-    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #718096; font-size: 0.75rem; font-weight: 700; cursor: pointer; gap: 4px; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #718096; font-size: 0.75rem; font-weight: 700; cursor: pointer; gap: 4px; transition: color 0.2s; }
     .nav-item.active { color: #00e676; }
     .nav-icon { font-size: 1.2rem; }
     
@@ -66,7 +83,7 @@
 
   <div class="header">
     <div class="header-title">기억집사 Memory Butler</div>
-    <div class="version-tag">v5.2</div>
+    <div class="version-tag">v5.3</div>
     <div class="status-lbl" id="statusLabel">시스템 정상 대기 중</div>
   </div>
 
@@ -158,7 +175,6 @@
     }
   }
 
-  // ★ 에러 처리(Else단 방어 코드) 주입으로 무한로딩 유실 차단 마감
   function handleTextSubmit() {
     if (isListening && recognition) { isListening = false; recognition.stop(); document.getElementById('micBtn').classList.remove('listening'); }
     const t = document.getElementById('textInput').value; if(!t.trim()) return;
@@ -178,7 +194,6 @@
         card.innerHTML = `<div class="log-text">${d.response}</div><div class="log-time">방금 전</div>`;
         container.insertBefore(card, container.firstChild);
       } else {
-        // ★ 비상 락 해제 메커니즘 가동 (UI 결함 방어)
         document.getElementById('statusLabel').innerText = "❌ 연산 거절: " + (d.error || "구조식 오인");
       }
     }).catch(e => { document.getElementById('statusLabel').innerText = "❌ 통신 파이프 차단 발생"; });
@@ -192,43 +207,75 @@
     .then(r => r.json()).then(res => {
       if(res.success) {
         masterInventoryCache = res.data;
-        renderHybridRows();
+        renderNestedTreeRows(); // 🌲 새로운 입체 트리 렌더링 호출
       } else {
         board.innerHTML = `<div style='color:#e53e3e; text-align:center; padding:20px;'>⚠️ 로드 거부됨: ${res.error || "인증 미결"}</div>`;
       }
     }).catch(() => { board.innerHTML = "<div style='color:#e53e3e; text-align:center;'>로드 실패</div>"; });
   }
 
-  function renderHybridRows() {
+  // 🌲 [신규] 평면 배열 데이터를 입체 Tree 객체로 변환하여 그리는 엔진
+  function renderNestedTreeRows() {
     const board = document.getElementById('spaceGrid'); board.innerHTML = "";
-    let grouped = {};
     
+    // 1. 데이터를 계층형 트리 객체로 조립
+    let tree = {};
     masterInventoryCache.forEach(item => {
-      let path = item.space_l1;
-      if(item.space_l2) path += ` ➔ ${item.space_l2}`;
-      if(item.space_l3) path += ` ➔ ${item.space_l3}`;
-      
-      if(!grouped[path]) grouped[path] = [];
-      grouped[path].push(item);
+      let l1 = (item.space_l1 && item.space_l1.trim() !== "") ? item.space_l1 : "미분류";
+      let l2 = (item.space_l2 && item.space_l2.trim() !== "") ? item.space_l2 : "";
+      let l3 = (item.space_l3 && item.space_l3.trim() !== "") ? item.space_l3 : "";
+
+      if (!tree[l1]) tree[l1] = { items: [], children: {} };
+      if (l2 && !tree[l1].children[l2]) tree[l1].children[l2] = { items: [], children: {} };
+      if (l2 && l3 && !tree[l1].children[l2].children[l3]) tree[l1].children[l2].children[l3] = { items: [], children: {} };
+
+      if (!l2) {
+        tree[l1].items.push(item);
+      } else if (!l3) {
+        tree[l1].children[l2].items.push(item);
+      } else {
+        tree[l1].children[l2].children[l3].items.push(item);
+      }
     });
-    
-    Object.keys(grouped).forEach(pathStr => {
-      const row = document.createElement('div'); row.className = 'kanban-row';
-      row.setAttribute('data-path', pathStr);
-      row.innerHTML = `<div class="row-header">${pathStr}</div><div class="row-cards"></div>`;
-      board.appendChild(row);
+
+    // 2. 트리 객체를 재귀적으로 순회하며 HTML 덩어리 생성
+    function buildBoxHTML(name, node, level, currentPath) {
+      let html = `<div class="space-box l${level}-box">`;
+      html += `<div class="box-title l${level}-title">${name}</div>`;
       
-      const cardsCont = row.querySelector('.row-cards');
-      grouped[pathStr].forEach(item => {
-        const card = document.createElement('div'); card.className = 'kanban-card';
-        card.setAttribute('data-id', item.id);
-        card.setAttribute('data-name', item.item);
-        card.innerHTML = `<div class="card-name">${item.item}</div><div class="card-ctrls"><div class="drag-handle">≡</div><button class="del-btn" onclick="removeCardItem(this)">✕</button></div>`;
-        cardsCont.appendChild(card);
+      // 해당 깊이의 아이템들이 들어갈 고유 컨테이너 (경로 데이터를 심어둠)
+      html += `<div class="item-container" data-path="${currentPath}">`;
+      node.items.forEach(item => {
+        html += `
+          <div class="kanban-card" data-id="${item.id}" data-name="${item.item}">
+            <div class="card-name">${item.item}</div>
+            <div class="card-ctrls">
+              <div class="drag-handle">≡</div>
+              <button class="del-btn" onclick="removeCardItem(this)">✕</button>
+            </div>
+          </div>`;
       });
+      html += `</div>`; // .item-container 종료
+
+      // 하위 박스가 있다면 내부에 재귀적으로 추가 (마트료시카 구현)
+      for (let childName in node.children) {
+        let childPath = currentPath + " ➔ " + childName;
+        html += buildBoxHTML(childName, node.children[childName], level + 1, childPath);
+      }
       
-      new Sortable(cardsCont, {
-        group: 'butler_space',
+      html += `</div>`; // .space-box 종료
+      return html;
+    }
+
+    // 3. 생성된 HTML을 화면에 부착
+    for (let l1Name in tree) {
+      board.insertAdjacentHTML('beforeend', buildBoxHTML(l1Name, tree[l1Name], 1, l1Name));
+    }
+
+    // 4. 모든 드롭 공간(.item-container)에 Sortable 엔진 적용 (중첩 박스 간 자유로운 이동 허용)
+    document.querySelectorAll('.item-container').forEach(cont => {
+      new Sortable(cont, {
+        group: 'butler_space', // 같은 그룹끼리 이동 가능
         animation: 180,
         handle: '.drag-handle',
         ghostClass: 'sortable-ghost',
@@ -236,22 +283,30 @@
         delayOnTouchOnly: true
       });
     });
-    document.getElementById('statusLabel').innerText = "공간 미러링 동기화 완료";
+
+    document.getElementById('statusLabel').innerText = "입체 공간 렌더링 완료";
   }
 
   function removeCardItem(btn) {
     if(confirm("이 품목의 위치 기억을 지우시겠습니까?")) { btn.closest('.kanban-card').remove(); }
   }
 
+  // 🧱 [수정] 입체 트리 구조에서 각각의 경로 데이터를 역추출하여 서버에 저장
   function saveInventoryStructure() {
     let finalPayload = [];
-    document.querySelectorAll('.kanban-row').forEach(row => {
-      const pathChunks = row.getAttribute('data-path').split(' ➔ ');
+    
+    // 화면에 있는 모든 드롭 컨테이너를 스캔
+    document.querySelectorAll('.item-container').forEach(container => {
+      const pathStr = container.getAttribute('data-path');
+      if(!pathStr) return;
+      
+      const pathChunks = pathStr.split(' ➔ ');
       const l1 = pathChunks[0] || "미분류";
       const l2 = pathChunks[1] || "";
       const l3 = pathChunks[2] || "";
       
-      row.querySelectorAll('.kanban-card').forEach(card => {
+      // 컨테이너 안에 들어있는 카드들을 해당 경로 소속으로 포장
+      container.querySelectorAll('.kanban-card').forEach(card => {
         finalPayload.push({
           id: card.getAttribute('data-id'),
           item: card.getAttribute('data-name'),
@@ -268,11 +323,12 @@
     fetch(GAS_WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "saveInventory", data: finalPayload }) })
     .then(r => r.json()).then(res => {
       saveBtn.innerText = "🧱 구조 저장"; saveBtn.disabled = false;
-      document.getElementById('statusLabel').innerText = "✅ 서버 저장 성공";
-      loadInventoryFromServer();
+      document.getElementById('statusLabel').innerText = "✅ 서버 입체 구조 저장 성공";
+      loadInventoryFromServer(); // 저장 후 뷰 새로고침
     }).catch(() => { saveBtn.innerText = "🧱 구조 저장"; saveBtn.disabled = false; alert("동기화 통신 실패"); });
   }
 
+  // 앱 켤 때 배경 동기화
   fetch(GAS_WEB_APP_URL).then(r => r.json()).then(res => { if(res.success) masterInventoryCache = res.data; });
 </script>
 </body>
