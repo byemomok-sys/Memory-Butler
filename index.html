@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>기억집사 Memory Butler</title>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-  <style>
+ <style>
     * { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; box-sizing: border-box; }
     textarea { -webkit-user-select: auto; user-select: auto; }
     
@@ -40,31 +40,52 @@
     
     .kanban-board { flex: 1; display: flex; flex-direction: column; gap: 14px; padding-bottom: 20px; }
     
-    /* 🧩 3차원 중첩 박스 (마트료시카) 스타일 정의 */
+    /* 🧩 3차원 중첩 박스 (마트료시카) 스타일 정의 - 여백 대폭 축소 */
     .space-box { border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-    .box-title { padding: 8px 10px; font-weight: 800; letter-spacing: 0.5px; }
+    .box-title { padding: 4px 8px; font-weight: 800; letter-spacing: 0.5px; cursor: pointer; }
     
-    /* Level 1 (최상위 대공간: 안방, 서재 등) */
-    .l1-box { background: #1a202c; border: 1px solid #2d3748; box-shadow: 0 4px 8px rgba(0,0,0,0.2); padding: 6px 10px 12px 10px; gap: 8px; }
+    /* Level 1 (최상위 대공간) - 패딩과 갭 축소 */
+    .l1-box { background: #1a202c; border: 1px solid #2d3748; box-shadow: 0 2px 4px rgba(0,0,0,0.2); padding: 4px 8px 8px 8px; gap: 4px; }
     .l1-title { color: #00e676; font-size: 1rem; border-bottom: 1px solid rgba(0,230,118,0.2); margin-bottom: 2px; }
     
-    /* Level 2 (중공간: 오른쪽 선반 등) */
-    .l2-box { background: rgba(255,255,255,0.03); border: 1px dashed #4a5568; margin-top: 4px; padding: 4px 8px 10px 8px; gap: 6px; border-radius: 8px; }
-    .l2-title { color: #63b3ed; font-size: 0.85rem; padding-bottom: 4px; }
+    /* Level 2 (중공간) - 패딩과 갭 축소 */
+    .l2-box { background: rgba(255,255,255,0.03); border: 1px dashed #4a5568; margin-top: 2px; padding: 4px 6px 6px 6px; gap: 4px; border-radius: 8px; }
+    .l2-title { color: #63b3ed; font-size: 0.85rem; padding-bottom: 2px; }
     
-    /* Level 3 (소공간: 첫번째 서랍 등) */
-    .l3-box { background: rgba(255,255,255,0.05); border: 1px dotted #718096; margin-top: 4px; padding: 4px 6px 8px 6px; gap: 4px; border-radius: 6px; }
-    .l3-title { color: #ecc94b; font-size: 0.75rem; padding-bottom: 4px; }
+    /* Level 3 (소공간) - 패딩과 갭 축소 */
+    .l3-box { background: rgba(255,255,255,0.05); border: 1px dotted #718096; margin-top: 2px; padding: 4px; gap: 2px; border-radius: 6px; }
+    .l3-title { color: #ecc94b; font-size: 0.75rem; padding-bottom: 2px; }
     
-    /* 드래그 앤 드롭이 가능한 아이템 적재 공간 */
-    .item-container { display: flex; flex-wrap: wrap; gap: 6px; min-height: 45px; background: rgba(0,0,0,0.15); border-radius: 8px; padding: 6px; }
-    .item-container:empty { border: 1px dashed rgba(255,255,255,0.1); } /* 비어있을 때 공간 유지 */
+    /* 🎨 대공간(L1) 배경색 테마 5가지 (은은한 다크톤으로 스크롤 시 공간 인지 강화) */
+    .theme-0 { background: rgba(30, 41, 59, 0.4); border-color: rgba(30, 41, 59, 0.8); } 
+    .theme-0 .l2-box { background: rgba(30, 41, 59, 0.6); }
+
+    .theme-1 { background: rgba(34, 48, 42, 0.4); border-color: rgba(34, 48, 42, 0.8); } 
+    .theme-1 .l2-box { background: rgba(34, 48, 42, 0.6); }
+
+    .theme-2 { background: rgba(48, 38, 44, 0.4); border-color: rgba(48, 38, 44, 0.8); } 
+    .theme-2 .l2-box { background: rgba(48, 38, 44, 0.6); }
+
+    .theme-3 { background: rgba(46, 43, 32, 0.4); border-color: rgba(46, 43, 32, 0.8); } 
+    .theme-3 .l2-box { background: rgba(46, 43, 32, 0.6); }
+
+    .theme-4 { background: rgba(41, 32, 43, 0.4); border-color: rgba(41, 32, 43, 0.8); } 
+    .theme-4 .l2-box { background: rgba(41, 32, 43, 0.6); }
+
+    /* 드래그 앤 드롭이 가능한 아이템 적재 공간 (Flex -> Grid로 변경하여 좁은 카드 다열 배치) */
+    .item-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 4px; min-height: 35px; background: rgba(0,0,0,0.15); border-radius: 8px; padding: 4px; }
+    .item-container:empty { display: flex; border: 1px dashed rgba(255,255,255,0.1); }
     
-    .kanban-card { background: #2d3748; border: 1px solid #4a5568; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex: 0 0 calc(50% - 3px); max-width: calc(50% - 3px); height: fit-content; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .card-name { font-weight: 700; font-size: 0.85rem; color: #edf2f7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-    .card-ctrls { display: flex; align-items: center; gap: 8px; }
-    .drag-handle { color: #a0aec0; font-size: 1.2rem; cursor: grab; padding: 0 4px; }
-    .del-btn { color: #fc8181; background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 0; }
+    /* 물품 카드 여백 및 크기 대폭 축소 (너비 제한 삭제, 그리드에 맞춰짐) */
+    .kanban-card { background: #2d3748; border: 1px solid #4a5568; border-radius: 6px; padding: 4px 6px; display: flex; justify-content: space-between; align-items: center; height: fit-content; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin: 0; }
+    
+    /* 물품명 폰트 축소 (L3 크기와 동일) 및 토글 애니메이션 준비 */
+    .card-name { font-weight: 700; font-size: 0.75rem; color: #edf2f7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; cursor: pointer; transition: all 0.2s ease; }
+    .card-name.expanded { white-space: normal; word-break: keep-all; } /* 짧게 누르면 펼쳐짐 */
+    
+    .card-ctrls { display: flex; align-items: center; gap: 4px; }
+    .drag-handle { color: #a0aec0; font-size: 1rem; cursor: grab; padding: 0 2px; }
+    .del-btn { color: #fc8181; background: none; border: none; font-size: 0.85rem; cursor: pointer; padding: 0; }
     
     .save-bar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
     .grid-save-btn { background: #00e676; color: #0f131a; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; }
@@ -214,6 +235,79 @@
     }).catch(() => { board.innerHTML = "<div style='color:#e53e3e; text-align:center;'>로드 실패</div>"; });
   }
 
+// 💡 짧은 터치(확장)와 롱터치(수정)를 제어하는 함수
+function attachPressEvents(element, type, originalName) {
+  let pressTimer;
+  let isDragging = false;
+
+  // 짧은 터치: 물품명일 경우에만 짤린 텍스트 토글
+  element.addEventListener('click', (e) => {
+    if (isDragging) return;
+    if (type === 'ITEM') element.classList.toggle('expanded');
+  });
+
+  const startPress = (e) => {
+    isDragging = false;
+    pressTimer = setTimeout(() => {
+      isDragging = true; 
+      
+      let currentName = type === 'ITEM' ? element.innerText : originalName;
+      let promptMsg = type === 'ITEM' ? "물품명을 수정하세요:" : "공간명을 수정하세요 (수정 후 상단의 [🧱 구조 저장]을 눌러야 반영됩니다):";
+      
+      let newName = prompt(promptMsg, currentName);
+      
+      if (newName && newName.trim() !== "" && newName !== currentName) {
+        if (type === 'ITEM') {
+          element.innerText = newName.trim();
+          element.closest('.kanban-card').setAttribute('data-name', newName.trim());
+        } else {
+          element.innerText = newName.trim();
+          updateAllPaths(type, originalName, newName.trim());
+          originalName = newName.trim(); // 내부 변수 업데이트
+        }
+      }
+    }, 600); // 0.6초간 누르고 있으면 작동
+  };
+
+  const cancelPress = () => clearTimeout(pressTimer);
+
+  element.addEventListener('touchstart', startPress, {passive: true});
+  element.addEventListener('touchend', cancelPress);
+  element.addEventListener('touchmove', () => { isDragging = true; cancelPress(); });
+  
+  element.addEventListener('mousedown', startPress);
+  element.addEventListener('mouseup', cancelPress);
+  element.addEventListener('mouseleave', cancelPress);
+  element.addEventListener('mousemove', () => { isDragging = true; cancelPress(); });
+}
+
+// 💡 공간명 변경 시, 해당 공간 아래의 모든 물품 경로(data-path)를 업데이트하는 함수
+function updateAllPaths(level, oldName, newName) {
+  document.querySelectorAll('.item-container').forEach(container => {
+    let pathStr = container.getAttribute('data-path');
+    if(!pathStr) return;
+    
+    let chunks = pathStr.split(' ➔ ');
+    let l1 = chunks[0] || "미분류";
+    let l2 = chunks[1] || "";
+    let l3 = chunks[2] || "";
+    
+    let changed = false;
+    if(level === 'L1' && l1 === oldName) { l1 = newName; changed = true; }
+    if(level === 'L2' && l2 === oldName) { l2 = newName; changed = true; }
+    if(level === 'L3' && l3 === oldName) { l3 = newName; changed = true; }
+    
+    if(changed) {
+      let newPath = l1;
+      if(l2) newPath += ' ➔ ' + l2;
+      if(l3) newPath += ' ➔ ' + l3;
+      container.setAttribute('data-path', newPath); 
+    }
+  });
+}
+
+
+  // 🌲 [신규] 평면 배열 데이터를 입체 Tree 객체로 변환하여 그리는 엔진
   // 🌲 [신규] 평면 배열 데이터를 입체 Tree 객체로 변환하여 그리는 엔진
   function renderNestedTreeRows() {
     const board = document.getElementById('spaceGrid'); board.innerHTML = "";
@@ -237,6 +331,74 @@
         tree[l1].children[l2].children[l3].items.push(item);
       }
     });
+
+    // 2. 트리 객체를 재귀적으로 순회하며 HTML 덩어리 생성 (themeClass 파라미터 추가)
+    function buildBoxHTML(name, node, level, currentPath, themeClass = "") {
+      // 💡 대공간(level 1)일 경우에만 테마 클래스가 들어갑니다.
+      let html = `<div class="space-box l${level}-box ${themeClass}">`;
+      // 💡 나중에 이벤트를 걸기 쉽도록 태그 안에 data-level과 data-name을 몰래 숨겨둡니다.
+      html += `<div class="box-title l${level}-title" data-level="L${level}" data-name="${name}">${name}</div>`;
+      
+      html += `<div class="item-container" data-path="${currentPath}">`;
+      node.items.forEach(item => {
+        html += `
+          <div class="kanban-card" data-id="${item.id}" data-name="${item.item}">
+            <div class="card-name">${item.item}</div>
+            <div class="card-ctrls">
+              <div class="drag-handle">≡</div>
+              <button class="del-btn" onclick="removeCardItem(this)">✕</button>
+            </div>
+          </div>`;
+      });
+      html += `</div>`; 
+
+      for (let childName in node.children) {
+        let childPath = currentPath + " ➔ " + childName;
+        html += buildBoxHTML(childName, node.children[childName], level + 1, childPath);
+      }
+      
+      html += `</div>`; 
+      return html;
+    }
+
+    // 3. 생성된 HTML을 화면에 부착
+    let l1Index = 0; // 테마 색상을 다르게 주기 위한 카운터
+    for (let l1Name in tree) {
+      let themeClass = `theme-${l1Index % 5}`; // 0~4번 테마 순환 적용
+      board.insertAdjacentHTML('beforeend', buildBoxHTML(l1Name, tree[l1Name], 1, l1Name, themeClass));
+      l1Index++;
+    }
+
+    // 4. 드롭 공간(.item-container)에 Sortable 엔진 적용 
+    document.querySelectorAll('.item-container').forEach(cont => {
+      new Sortable(cont, {
+        group: 'butler_space', 
+        animation: 180,
+        handle: '.drag-handle',
+        ghostClass: 'sortable-ghost',
+        delay: 60,
+        delayOnTouchOnly: true
+      });
+    });
+
+    // ==========================================
+    // 💡 5. 화면 렌더링이 끝난 직후 롱터치 이벤트 연결!
+    // ==========================================
+    
+    // (1) 모든 물품명 카드 요소에 이벤트 달기
+    document.querySelectorAll('.card-name').forEach(el => {
+      attachPressEvents(el, 'ITEM');
+    });
+
+    // (2) 모든 공간명(L1, L2, L3) 요소에 이벤트 달기
+    document.querySelectorAll('.box-title').forEach(el => {
+      let level = el.getAttribute('data-level'); // "L1", "L2", "L3" 추출
+      let originalName = el.getAttribute('data-name'); // "서재", "선반" 등 원래 이름 추출
+      attachPressEvents(el, level, originalName);
+    });
+
+    document.getElementById('statusLabel').innerText = "입체 공간 렌더링 완료";
+  }
 
     // 2. 트리 객체를 재귀적으로 순회하며 HTML 덩어리 생성
     function buildBoxHTML(name, node, level, currentPath) {
@@ -285,7 +447,7 @@
     });
 
     document.getElementById('statusLabel').innerText = "입체 공간 렌더링 완료";
-  }
+  
 
   function removeCardItem(btn) {
     if(confirm("이 품목의 위치 기억을 지우시겠습니까?")) { btn.closest('.kanban-card').remove(); }
@@ -317,6 +479,84 @@
       });
     });
     
+  // 💡 [핵심] 짧은 터치(확장)와 롱터치(수정)를 동시에 제어하는 범용 함수
+// type은 'ITEM', 'L1', 'L2', 'L3' 중 하나를 받습니다.
+function attachPressEvents(element, type, originalName) {
+  let pressTimer;
+  let isDragging = false;
+
+  // 짧은 터치(클릭) 이벤트: 물품명일 경우에만 짤린 텍스트 토글
+  element.addEventListener('click', (e) => {
+    if (isDragging) return; // 스크롤이나 롱터치 중에는 무시
+    if (type === 'ITEM') element.classList.toggle('expanded');
+  });
+
+  const startPress = (e) => {
+    isDragging = false;
+    // 0.6초 동안 누르고 있으면 롱터치 발동
+    pressTimer = setTimeout(() => {
+      isDragging = true; 
+      
+      let currentName = type === 'ITEM' ? element.innerText : originalName;
+      let promptMsg = type === 'ITEM' ? "물품명을 수정하세요:" : "공간명을 수정하세요 (수정 후 반드시 상단의 [🧱 구조 저장]을 눌러야 반영됩니다):";
+      
+      let newName = prompt(promptMsg, currentName);
+      
+      if (newName && newName.trim() !== "" && newName !== currentName) {
+        if (type === 'ITEM') {
+          // 1. 물품명 수정 시
+          element.innerText = newName.trim();
+          element.closest('.kanban-card').setAttribute('data-name', newName.trim());
+        } else {
+          // 2. 공간명 수정 시 (L1, L2, L3)
+          element.innerText = newName.trim();
+          // 🔥 가장 중요한 작업: 하위 물품들이 가지고 있는 data-path를 일괄 변경합니다.
+          updateAllPaths(type, originalName, newName.trim());
+          originalName = newName.trim(); // 내부 변수 업데이트
+        }
+      }
+    }, 600); 
+  };
+
+  const cancelPress = () => clearTimeout(pressTimer);
+
+  // 모바일 터치 및 PC 마우스 이벤트 완벽 대응
+  element.addEventListener('touchstart', startPress, {passive: true});
+  element.addEventListener('touchend', cancelPress);
+  element.addEventListener('touchmove', () => { isDragging = true; cancelPress(); });
+  
+  element.addEventListener('mousedown', startPress);
+  element.addEventListener('mouseup', cancelPress);
+  element.addEventListener('mouseleave', cancelPress);
+  element.addEventListener('mousemove', () => { isDragging = true; cancelPress(); });
+}
+
+// 💡 공간명이 바뀌면 모든 카드 보관함(item-container)의 data-path를 찾아 수정하는 함수
+// (이래야 구조 저장 버튼을 눌렀을 때 엉뚱한 이름으로 서버에 저장되지 않습니다)
+function updateAllPaths(level, oldName, newName) {
+  document.querySelectorAll('.item-container').forEach(container => {
+    let pathStr = container.getAttribute('data-path');
+    if(!pathStr) return;
+    
+    let chunks = pathStr.split(' ➔ ');
+    let l1 = chunks[0] || "미분류";
+    let l2 = chunks[1] || "";
+    let l3 = chunks[2] || "";
+    
+    let changed = false;
+    if(level === 'L1' && l1 === oldName) { l1 = newName; changed = true; }
+    if(level === 'L2' && l2 === oldName) { l2 = newName; changed = true; }
+    if(level === 'L3' && l3 === oldName) { l3 = newName; changed = true; }
+    
+    if(changed) {
+      let newPath = l1;
+      if(l2) newPath += ' ➔ ' + l2;
+      if(l3) newPath += ' ➔ ' + l3;
+      container.setAttribute('data-path', newPath); // 수정된 경로 덮어쓰기
+    }
+  });
+}
+
     const saveBtn = document.getElementById('saveGridBtn');
     saveBtn.innerText = "🧱 공장 싱크 중..."; saveBtn.disabled = true;
     
