@@ -81,7 +81,7 @@
     
     /* 물품명 폰트 축소 (L3 크기와 동일) 및 토글 애니메이션 준비 */
     .card-name { font-weight: 700; font-size: 0.75rem; color: #edf2f7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; cursor: pointer; transition: all 0.2s ease; }
-    .card-name.expanded { white-space: normal; word-break: keep-all; } /* 짧게 누르면 펼쳐짐 */
+    .card-name.expanded { white-space: normal; word-break: break-all; }
     
     .card-ctrls { display: flex; align-items: center; gap: 4px; }
     .drag-handle { color: #a0aec0; font-size: 1rem; cursor: grab; padding: 0 2px; }
@@ -228,91 +228,105 @@
     .then(r => r.json()).then(res => {
       if(res.success) {
         masterInventoryCache = res.data;
-        renderNestedTreeRows(); // 🌲 새로운 입체 트리 렌더링 호출
+        renderNestedTreeRows(); 
       } else {
         board.innerHTML = `<div style='color:#e53e3e; text-align:center; padding:20px;'>⚠️ 로드 거부됨: ${res.error || "인증 미결"}</div>`;
       }
     }).catch(() => { board.innerHTML = "<div style='color:#e53e3e; text-align:center;'>로드 실패</div>"; });
   }
 
-// 💡 짧은 터치(확장)와 롱터치(수정)를 제어하는 함수
-function attachPressEvents(element, type, originalName) {
-  let pressTimer;
-  let isDragging = false;
+  // 💡 [개정] 짧은 터치(확장)와 미세 떨림방지형 롱터치(수정) 통합 제어 함수
+  function attachPressEvents(element, type, originalName) {
+    let pressTimer;
+    let isDragging = false;
+    let startX = 0, startY = 0;
 
-  // 짧은 터치: 물품명일 경우에만 짤린 텍스트 토글
-  element.addEventListener('click', (e) => {
-    if (isDragging) return;
-    if (type === 'ITEM') element.classList.toggle('expanded');
-  });
+    element.addEventListener('click', (e) => {
+      if (isDragging) return;
+      if (type === 'ITEM') element.classList.toggle('expanded');
+    });
 
-  const startPress = (e) => {
-    isDragging = false;
-    pressTimer = setTimeout(() => {
-      isDragging = true; 
-      
-      let currentName = type === 'ITEM' ? element.innerText : originalName;
-      let promptMsg = type === 'ITEM' ? "물품명을 수정하세요:" : "공간명을 수정하세요 (수정 후 상단의 [🧱 구조 저장]을 눌러야 반영됩니다):";
-      
-      let newName = prompt(promptMsg, currentName);
-      
-      if (newName && newName.trim() !== "" && newName !== currentName) {
-        if (type === 'ITEM') {
-          element.innerText = newName.trim();
-          element.closest('.kanban-card').setAttribute('data-name', newName.trim());
-        } else {
-          element.innerText = newName.trim();
-          updateAllPaths(type, originalName, newName.trim());
-          originalName = newName.trim(); // 내부 변수 업데이트
+    const startPress = (e) => {
+      isDragging = false;
+      const touch = e.touches ? e.touches[0] : e;
+      startX = touch.clientX;
+      startY = touch.clientY;
+
+      pressTimer = setTimeout(() => {
+        isDragging = true; 
+        let currentName = type === 'ITEM' ? element.innerText : originalName;
+        let promptMsg = type === 'ITEM' ? "물품명을 수정하세요:" : "공간명을 수정하세요 (수정 후 상단의 [🧱 구조 저장]을 눌러야 반영됩니다):";
+        
+        let newName = prompt(promptMsg, currentName);
+        
+        if (newName && newName.trim() !== "" && newName !== currentName) {
+          if (type === 'ITEM') {
+            element.innerText = newName.trim();
+            element.closest('.kanban-card').setAttribute('data-name', newName.trim());
+          } else {
+            element.innerText = newName.trim();
+            updateAllPaths(type, originalName, newName.trim());
+            originalName = newName.trim(); 
+          }
         }
+      }, 600); 
+    };
+
+    // 💡 미세 떨림 보정: 누른 좌표 기준 반지름 10px 이상 움직였을 때만 드래그로 간주하고 타이머 취소
+    const movePress = (e) => {
+      if (!pressTimer) return;
+      const touch = e.touches ? e.touches[0] : e;
+      const distance = Math.hypot(touch.clientX - startX, touch.clientY - startY);
+      if (distance > 10) {
+        isDragging = true;
+        clearTimeout(pressTimer);
+        pressTimer = null;
       }
-    }, 600); // 0.6초간 누르고 있으면 작동
-  };
+    };
 
-  const cancelPress = () => clearTimeout(pressTimer);
+    const cancelPress = () => {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+    };
 
-  element.addEventListener('touchstart', startPress, {passive: true});
-  element.addEventListener('touchend', cancelPress);
-  element.addEventListener('touchmove', () => { isDragging = true; cancelPress(); });
-  
-  element.addEventListener('mousedown', startPress);
-  element.addEventListener('mouseup', cancelPress);
-  element.addEventListener('mouseleave', cancelPress);
-  element.addEventListener('mousemove', () => { isDragging = true; cancelPress(); });
-}
-
-// 💡 공간명 변경 시, 해당 공간 아래의 모든 물품 경로(data-path)를 업데이트하는 함수
-function updateAllPaths(level, oldName, newName) {
-  document.querySelectorAll('.item-container').forEach(container => {
-    let pathStr = container.getAttribute('data-path');
-    if(!pathStr) return;
+    element.addEventListener('touchstart', startPress, {passive: true});
+    element.addEventListener('touchmove', movePress, {passive: true});
+    element.addEventListener('touchend', cancelPress);
     
-    let chunks = pathStr.split(' ➔ ');
-    let l1 = chunks[0] || "미분류";
-    let l2 = chunks[1] || "";
-    let l3 = chunks[2] || "";
-    
-    let changed = false;
-    if(level === 'L1' && l1 === oldName) { l1 = newName; changed = true; }
-    if(level === 'L2' && l2 === oldName) { l2 = newName; changed = true; }
-    if(level === 'L3' && l3 === oldName) { l3 = newName; changed = true; }
-    
-    if(changed) {
-      let newPath = l1;
-      if(l2) newPath += ' ➔ ' + l2;
-      if(l3) newPath += ' ➔ ' + l3;
-      container.setAttribute('data-path', newPath); 
-    }
-  });
-}
+    element.addEventListener('mousedown', startPress);
+    element.addEventListener('mousemove', (e) => { if (e.buttons === 1) movePress(e); });
+    element.addEventListener('mouseup', cancelPress);
+    element.addEventListener('mouseleave', cancelPress);
+  }
 
+  function updateAllPaths(level, oldName, newName) {
+    document.querySelectorAll('.item-container').forEach(container => {
+      let pathStr = container.getAttribute('data-path');
+      if(!pathStr) return;
+      
+      let chunks = pathStr.split(' ➔ ');
+      let l1 = chunks[0] || "미분류";
+      let l2 = chunks[1] || "";
+      let l3 = chunks[2] || "";
+      
+      let changed = false;
+      if(level === 'L1' && l1 === oldName) { l1 = newName; changed = true; }
+      if(level === 'L2' && l2 === oldName) { l2 = newName; changed = true; }
+      if(level === 'L3' && l3 === oldName) { l3 = newName; changed = true; }
+      
+      if(changed) {
+        let newPath = l1;
+        if(l2) newPath += ' ➔ ' + l2;
+        if(l3) newPath += ' ➔ ' + l3;
+        container.setAttribute('data-path', newPath); 
+      }
+    });
+  }
 
-  // 🌲 [신규] 평면 배열 데이터를 입체 Tree 객체로 변환하여 그리는 엔진
-  // 🌲 [신규] 평면 배열 데이터를 입체 Tree 객체로 변환하여 그리는 엔진
+  // 🌲 평면 배열 데이터를 입체 Tree 객체로 변환하여 그리는 엔진
   function renderNestedTreeRows() {
     const board = document.getElementById('spaceGrid'); board.innerHTML = "";
     
-    // 1. 데이터를 계층형 트리 객체로 조립
     let tree = {};
     masterInventoryCache.forEach(item => {
       let l1 = (item.space_l1 && item.space_l1.trim() !== "") ? item.space_l1 : "미분류";
@@ -332,11 +346,8 @@ function updateAllPaths(level, oldName, newName) {
       }
     });
 
-    // 2. 트리 객체를 재귀적으로 순회하며 HTML 덩어리 생성 (themeClass 파라미터 추가)
     function buildBoxHTML(name, node, level, currentPath, themeClass = "") {
-      // 💡 대공간(level 1)일 경우에만 테마 클래스가 들어갑니다.
       let html = `<div class="space-box l${level}-box ${themeClass}">`;
-      // 💡 나중에 이벤트를 걸기 쉽도록 태그 안에 data-level과 data-name을 몰래 숨겨둡니다.
       html += `<div class="box-title l${level}-title" data-level="L${level}" data-name="${name}">${name}</div>`;
       
       html += `<div class="item-container" data-path="${currentPath}">`;
@@ -361,15 +372,13 @@ function updateAllPaths(level, oldName, newName) {
       return html;
     }
 
-    // 3. 생성된 HTML을 화면에 부착
-    let l1Index = 0; // 테마 색상을 다르게 주기 위한 카운터
+    let l1Index = 0; 
     for (let l1Name in tree) {
-      let themeClass = `theme-${l1Index % 5}`; // 0~4번 테마 순환 적용
+      let themeClass = `theme-${l1Index % 5}`; 
       board.insertAdjacentHTML('beforeend', buildBoxHTML(l1Name, tree[l1Name], 1, l1Name, themeClass));
       l1Index++;
     }
 
-    // 4. 드롭 공간(.item-container)에 Sortable 엔진 적용 
     document.querySelectorAll('.item-container').forEach(cont => {
       new Sortable(cont, {
         group: 'butler_space', 
@@ -381,83 +390,23 @@ function updateAllPaths(level, oldName, newName) {
       });
     });
 
-    // ==========================================
-    // 💡 5. 화면 렌더링이 끝난 직후 롱터치 이벤트 연결!
-    // ==========================================
-    
-    // (1) 모든 물품명 카드 요소에 이벤트 달기
-    document.querySelectorAll('.card-name').forEach(el => {
-      attachPressEvents(el, 'ITEM');
-    });
-
-    // (2) 모든 공간명(L1, L2, L3) 요소에 이벤트 달기
+    document.querySelectorAll('.card-name').forEach(el => { attachPressEvents(el, 'ITEM'); });
     document.querySelectorAll('.box-title').forEach(el => {
-      let level = el.getAttribute('data-level'); // "L1", "L2", "L3" 추출
-      let originalName = el.getAttribute('data-name'); // "서재", "선반" 등 원래 이름 추출
+      let level = el.getAttribute('data-level'); 
+      let originalName = el.getAttribute('data-name'); 
       attachPressEvents(el, level, originalName);
     });
 
     document.getElementById('statusLabel').innerText = "입체 공간 렌더링 완료";
   }
 
-    // 2. 트리 객체를 재귀적으로 순회하며 HTML 덩어리 생성
-    function buildBoxHTML(name, node, level, currentPath) {
-      let html = `<div class="space-box l${level}-box">`;
-      html += `<div class="box-title l${level}-title">${name}</div>`;
-      
-      // 해당 깊이의 아이템들이 들어갈 고유 컨테이너 (경로 데이터를 심어둠)
-      html += `<div class="item-container" data-path="${currentPath}">`;
-      node.items.forEach(item => {
-        html += `
-          <div class="kanban-card" data-id="${item.id}" data-name="${item.item}">
-            <div class="card-name">${item.item}</div>
-            <div class="card-ctrls">
-              <div class="drag-handle">≡</div>
-              <button class="del-btn" onclick="removeCardItem(this)">✕</button>
-            </div>
-          </div>`;
-      });
-      html += `</div>`; // .item-container 종료
-
-      // 하위 박스가 있다면 내부에 재귀적으로 추가 (마트료시카 구현)
-      for (let childName in node.children) {
-        let childPath = currentPath + " ➔ " + childName;
-        html += buildBoxHTML(childName, node.children[childName], level + 1, childPath);
-      }
-      
-      html += `</div>`; // .space-box 종료
-      return html;
-    }
-
-    // 3. 생성된 HTML을 화면에 부착
-    for (let l1Name in tree) {
-      board.insertAdjacentHTML('beforeend', buildBoxHTML(l1Name, tree[l1Name], 1, l1Name));
-    }
-
-    // 4. 모든 드롭 공간(.item-container)에 Sortable 엔진 적용 (중첩 박스 간 자유로운 이동 허용)
-    document.querySelectorAll('.item-container').forEach(cont => {
-      new Sortable(cont, {
-        group: 'butler_space', // 같은 그룹끼리 이동 가능
-        animation: 180,
-        handle: '.drag-handle',
-        ghostClass: 'sortable-ghost',
-        delay: 60,
-        delayOnTouchOnly: true
-      });
-    });
-
-    document.getElementById('statusLabel').innerText = "입체 공간 렌더링 완료";
-  
-
   function removeCardItem(btn) {
     if(confirm("이 품목의 위치 기억을 지우시겠습니까?")) { btn.closest('.kanban-card').remove(); }
   }
 
-  // 🧱 [수정] 입체 트리 구조에서 각각의 경로 데이터를 역추출하여 서버에 저장
   function saveInventoryStructure() {
     let finalPayload = [];
     
-    // 화면에 있는 모든 드롭 컨테이너를 스캔
     document.querySelectorAll('.item-container').forEach(container => {
       const pathStr = container.getAttribute('data-path');
       if(!pathStr) return;
@@ -467,7 +416,6 @@ function updateAllPaths(level, oldName, newName) {
       const l2 = pathChunks[1] || "";
       const l3 = pathChunks[2] || "";
       
-      // 컨테이너 안에 들어있는 카드들을 해당 경로 소속으로 포장
       container.querySelectorAll('.kanban-card').forEach(card => {
         finalPayload.push({
           id: card.getAttribute('data-id'),
@@ -479,96 +427,17 @@ function updateAllPaths(level, oldName, newName) {
       });
     });
     
-  // 💡 [핵심] 짧은 터치(확장)와 롱터치(수정)를 동시에 제어하는 범용 함수
-// type은 'ITEM', 'L1', 'L2', 'L3' 중 하나를 받습니다.
-function attachPressEvents(element, type, originalName) {
-  let pressTimer;
-  let isDragging = false;
-
-  // 짧은 터치(클릭) 이벤트: 물품명일 경우에만 짤린 텍스트 토글
-  element.addEventListener('click', (e) => {
-    if (isDragging) return; // 스크롤이나 롱터치 중에는 무시
-    if (type === 'ITEM') element.classList.toggle('expanded');
-  });
-
-  const startPress = (e) => {
-    isDragging = false;
-    // 0.6초 동안 누르고 있으면 롱터치 발동
-    pressTimer = setTimeout(() => {
-      isDragging = true; 
-      
-      let currentName = type === 'ITEM' ? element.innerText : originalName;
-      let promptMsg = type === 'ITEM' ? "물품명을 수정하세요:" : "공간명을 수정하세요 (수정 후 반드시 상단의 [🧱 구조 저장]을 눌러야 반영됩니다):";
-      
-      let newName = prompt(promptMsg, currentName);
-      
-      if (newName && newName.trim() !== "" && newName !== currentName) {
-        if (type === 'ITEM') {
-          // 1. 물품명 수정 시
-          element.innerText = newName.trim();
-          element.closest('.kanban-card').setAttribute('data-name', newName.trim());
-        } else {
-          // 2. 공간명 수정 시 (L1, L2, L3)
-          element.innerText = newName.trim();
-          // 🔥 가장 중요한 작업: 하위 물품들이 가지고 있는 data-path를 일괄 변경합니다.
-          updateAllPaths(type, originalName, newName.trim());
-          originalName = newName.trim(); // 내부 변수 업데이트
-        }
-      }
-    }, 600); 
-  };
-
-  const cancelPress = () => clearTimeout(pressTimer);
-
-  // 모바일 터치 및 PC 마우스 이벤트 완벽 대응
-  element.addEventListener('touchstart', startPress, {passive: true});
-  element.addEventListener('touchend', cancelPress);
-  element.addEventListener('touchmove', () => { isDragging = true; cancelPress(); });
-  
-  element.addEventListener('mousedown', startPress);
-  element.addEventListener('mouseup', cancelPress);
-  element.addEventListener('mouseleave', cancelPress);
-  element.addEventListener('mousemove', () => { isDragging = true; cancelPress(); });
-}
-
-// 💡 공간명이 바뀌면 모든 카드 보관함(item-container)의 data-path를 찾아 수정하는 함수
-// (이래야 구조 저장 버튼을 눌렀을 때 엉뚱한 이름으로 서버에 저장되지 않습니다)
-function updateAllPaths(level, oldName, newName) {
-  document.querySelectorAll('.item-container').forEach(container => {
-    let pathStr = container.getAttribute('data-path');
-    if(!pathStr) return;
-    
-    let chunks = pathStr.split(' ➔ ');
-    let l1 = chunks[0] || "미분류";
-    let l2 = chunks[1] || "";
-    let l3 = chunks[2] || "";
-    
-    let changed = false;
-    if(level === 'L1' && l1 === oldName) { l1 = newName; changed = true; }
-    if(level === 'L2' && l2 === oldName) { l2 = newName; changed = true; }
-    if(level === 'L3' && l3 === oldName) { l3 = newName; changed = true; }
-    
-    if(changed) {
-      let newPath = l1;
-      if(l2) newPath += ' ➔ ' + l2;
-      if(l3) newPath += ' ➔ ' + l3;
-      container.setAttribute('data-path', newPath); // 수정된 경로 덮어쓰기
-    }
-  });
-}
-
     const saveBtn = document.getElementById('saveGridBtn');
-    saveBtn.innerText = "🧱 공장 싱크 중..."; saveBtn.disabled = true;
+    saveBtn.innerText = "🧱 공간 싱크 중..."; saveBtn.disabled = true;
     
     fetch(GAS_WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: "saveInventory", data: finalPayload }) })
     .then(r => r.json()).then(res => {
       saveBtn.innerText = "🧱 구조 저장"; saveBtn.disabled = false;
       document.getElementById('statusLabel').innerText = "✅ 서버 입체 구조 저장 성공";
-      loadInventoryFromServer(); // 저장 후 뷰 새로고침
+      loadInventoryFromServer(); 
     }).catch(() => { saveBtn.innerText = "🧱 구조 저장"; saveBtn.disabled = false; alert("동기화 통신 실패"); });
   }
 
-  // 앱 켤 때 배경 동기화
   fetch(GAS_WEB_APP_URL).then(r => r.json()).then(res => { if(res.success) masterInventoryCache = res.data; });
 </script>
 </body>
